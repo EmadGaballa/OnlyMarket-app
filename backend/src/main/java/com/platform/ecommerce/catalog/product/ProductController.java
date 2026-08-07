@@ -1,0 +1,131 @@
+package com.platform.ecommerce.catalog.product;
+
+import com.platform.ecommerce.catalog.product.domain.Product;
+import com.platform.ecommerce.catalog.product.dto.ProductRequest;
+import com.platform.ecommerce.catalog.product.dto.ProductResponse;
+import com.platform.ecommerce.common.dto.PagedResponse;
+import com.platform.ecommerce.user.Permissions;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import java.math.BigDecimal;
+import java.util.Map;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+/**
+ * Product endpoints. Public listing/detail are open; mutations are
+ * permission-gated with ownership checks via {@code @productSecurity}.
+ */
+@RestController
+@RequestMapping("/api/v1/products")
+@Tag(name = "Products")
+public class ProductController {
+
+  private final ProductService productService;
+  private final ProductImageService productImageService;
+
+  public ProductController(ProductService productService, ProductImageService productImageService) {
+    this.productService = productService;
+    this.productImageService = productImageService;
+  }
+
+  @GetMapping
+  @Operation(summary = "Search published products",
+      description = "Public product listing with search/filter/sort/pagination.")
+  public ResponseEntity<PagedResponse<ProductResponse>> search(
+      @RequestParam(required = false) String search,
+      @RequestParam(required = false) Long categoryId,
+      @RequestParam(required = false) Long brandId,
+      @RequestParam(required = false) BigDecimal minPrice,
+      @RequestParam(required = false) BigDecimal maxPrice,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(required = false) String sort) {
+    return ResponseEntity.ok(productService.searchPublished(
+        search, categoryId, brandId, minPrice, maxPrice, page, size, sort));
+  }
+
+  @GetMapping("/{slug}")
+  @Operation(summary = "Get product by slug")
+  public ResponseEntity<ProductResponse> getBySlug(@PathVariable String slug) {
+    return ResponseEntity.ok(productService.getBySlug(slug));
+  }
+
+  @PostMapping
+  @PreAuthorize("hasAuthority('" + Permissions.PRODUCT_CREATE + "')")
+  @Operation(summary = "Create a product (seller or admin)")
+  public ResponseEntity<ProductResponse> create(
+      @Valid @RequestBody ProductRequest request,
+      Authentication authentication) {
+    Long sellerId = currentUserId(authentication);
+    return ResponseEntity.ok(productService.create(sellerId, request));
+  }
+
+  @PutMapping("/{productId}/{slug}")
+  @PreAuthorize("hasAuthority('" + Permissions.PRODUCT_EDIT_ANY + "') or "
+      + "(hasAuthority('" + Permissions.PRODUCT_EDIT_OWN + "') and "
+      + "@productSecurity.isOwner(#productId, principal))")
+  @Operation(summary = "Update a product (owner or admin)")
+  public ResponseEntity<ProductResponse> update(
+      @PathVariable Long productId,
+      @PathVariable String slug,
+      @Valid @RequestBody ProductRequest request) {
+    return ResponseEntity.ok(productService.update(productId, slug, request));
+  }
+
+  @DeleteMapping("/{productId}/{slug}")
+  @PreAuthorize("hasAuthority('" + Permissions.PRODUCT_DELETE_ANY + "') or "
+      + "(hasAuthority('" + Permissions.PRODUCT_DELETE_OWN + "') and "
+      + "@productSecurity.isOwner(#productId, principal))")
+  @Operation(summary = "Delete a product (owner or admin)")
+  public ResponseEntity<Void> delete(@PathVariable Long productId, @PathVariable String slug) {
+    productService.delete(productId, slug);
+    return ResponseEntity.noContent().build();
+  }
+
+  @PostMapping("/{productId}/images")
+  @PreAuthorize("hasAuthority('" + Permissions.PRODUCT_EDIT_ANY + "') or "
+      + "(hasAuthority('" + Permissions.PRODUCT_EDIT_OWN + "') and "
+      + "@productSecurity.isOwner(#productId, principal))")
+  @Operation(summary = "Upload a product image")
+  public ResponseEntity<ProductResponse> uploadImage(
+      @PathVariable Long productId,
+      @RequestPart("file") MultipartFile file,
+      @RequestParam(required = false) String altText) {
+    String url = productImageService.storeImage(productId, file);
+    return ResponseEntity.ok(productService.addImage(productId, url, altText));
+  }
+
+  @GetMapping("/seller/mine")
+  @PreAuthorize("hasAuthority('" + Permissions.PRODUCT_EDIT_OWN + "')")
+  @Operation(summary = "List current seller's products")
+  public ResponseEntity<PagedResponse<ProductResponse>> myProducts(
+      @RequestParam(required = false) Product.Status status,
+      @RequestParam(required = false) String search,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(required = false) String sort,
+      Authentication authentication) {
+    Long sellerId = currentUserId(authentication);
+    return ResponseEntity.ok(productService.searchBySeller(sellerId, status, search, page, size, sort));
+  }
+
+  private Long currentUserId(Authentication authentication) {
+    var principal = (UserDetails) authentication.getPrincipal();
+    return productService.resolveUserIdByEmail(principal.getUsername());
+  }
+}
