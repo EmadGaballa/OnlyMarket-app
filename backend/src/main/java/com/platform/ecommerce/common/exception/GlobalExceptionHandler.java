@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Global exception handler mapping every exception to the consistent
@@ -105,6 +106,21 @@ public class GlobalExceptionHandler {
         "Uploaded file exceeds the maximum allowed size", request, null);
   }
 
+  @ExceptionHandler(NoHandlerFoundException.class)
+  public ResponseEntity<ApiErrorResponse> handleNotFound(
+      NoHandlerFoundException ex, HttpServletRequest request) {
+    return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND",
+        "No handler found for " + ex.getHttpMethod() + " " + ex.getRequestURL(),
+        request, null);
+  }
+
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<ApiErrorResponse> handleResourceNotFound(
+      NoResourceFoundException ex, HttpServletRequest request) {
+    return buildResponse(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND",
+        "Static resource not found: /" + ex.getResourcePath(), request, null);
+  }
+
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiErrorResponse> handleGeneric(
       Exception ex, HttpServletRequest request) {
@@ -116,14 +132,6 @@ public class GlobalExceptionHandler {
         : "An unexpected error occurred. Reference: " + correlationId;
     return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR",
         message, request, null, correlationId);
-  }
-
-  @ExceptionHandler(NoHandlerFoundException.class)
-  public ResponseEntity<ApiErrorResponse> handleNotFound(
-      NoHandlerFoundException ex, HttpServletRequest request) {
-    return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND",
-        "No handler found for " + ex.getHttpMethod() + " " + ex.getRequestURL(),
-        request, null);
   }
 
   private ResponseEntity<ApiErrorResponse> buildResponse(

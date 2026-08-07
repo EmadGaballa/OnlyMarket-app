@@ -2,48 +2,24 @@ spring:
   application:
     name: ecommerce-backend
   profiles:
-    active: dev
-  jpa:
-    open-in-view: false
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        jdbc:
-          time_zone: UTC
-        format_sql: true
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  
+  # File Upload Limits
   servlet:
     multipart:
       max-file-size: 5MB
       max-request-size: 20MB
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      timeout: 2s
-  cache:
-    type: redis
-    redis:
-      time-to-live: 10m
-      cache-null-values: false
 
-server:
-  port: 8080
-  error:
-    include-stacktrace: never
-    include-message: never
+  # OpenAPI / Swagger
+  springdoc:
+    swagger-ui:
+      path: /swagger-ui.html
+      operations-sorter: method
+      tags-sorter: alpha
+    api-docs:
+      path: /v3/api-docs
 
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-    operations-sorter: method
-    tags-sorter: alpha
-  api-docs:
-    path: /v3/api-docs
-
+# App Specific Configurations
 app:
   jwt:
     access-token-ttl: 15m
@@ -60,6 +36,7 @@ app:
     register-per-minute: 3
     forgot-password-per-minute: 3
 
+# Actuator Monitoring
 management:
   endpoints:
     web:

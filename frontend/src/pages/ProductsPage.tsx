@@ -29,7 +29,7 @@ export default function ProductsPage() {
   });
 
   const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
-    queryKey: ['products', { search, categoryId, brandId, sort, page, size }],
+    queryKey: ['products', search, categoryId, brandId, sort, page, size],
     queryFn: () =>
       productsApi.list({
         search: search || undefined,

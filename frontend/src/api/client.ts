@@ -25,6 +25,11 @@ async function request<T>(
   });
 
   if (response.status === 401 && !isRetry) {
+    // Only attempt refresh if we previously had an access token.
+    // If there's no token, the user is simply not authenticated — no refresh needed.
+    if (!accessToken) {
+      return response.json() as Promise<T>;
+    }
     const refreshed = await refreshToken();
     if (refreshed) {
       return request<T>(path, options, true);

@@ -2,6 +2,8 @@ package com.platform.ecommerce.config;
 
 import com.platform.ecommerce.security.JwtAuthFilter;
 import com.platform.ecommerce.security.RateLimitFilter;
+import jakarta.servlet.http.HttpServletResponse;
+import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -20,14 +22,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-/**
- * Spring Security configuration.
- *
- * <p>Stateless JWT authentication with an HTTP-only refresh cookie.
- * CSRF is mitigated via SameSite=Strict + the X-Requested-With header
- * requirement on the refresh endpoint (see {@code AuthController}).
- * Secure headers are applied per Section 9.7.</p>
- */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -50,9 +44,18 @@ public class SecurityConfig {
         .csrf(csrf -> csrf.disable())
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .exceptionHandling(exceptions -> exceptions
+            .authenticationEntryPoint((request, response, authException) -> {
+              response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+              response.setContentType("application/json");
+              response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + authException.getMessage() + "\"}");
+            })
+        )
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/actuator/health", "/actuator/info").permitAll()
             .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+            // FIX: Permit access to uploaded files
+            .requestMatchers("/uploads/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login",
                 "/api/v1/auth/refresh", "/api/v1/auth/forgot-password",
                 "/api/v1/auth/reset-password", "/api/v1/auth/verify-email").permitAll()
@@ -62,18 +65,12 @@ public class SecurityConfig {
         .headers(headers -> headers
             .contentSecurityPolicy(csp -> csp.policyDirectives(
                 "default-src 'self'; frame-ancestors 'none'"))
-            .contentTypeOptions(cto -> cto.disable())
             .frameOptions(fo -> fo.deny())
             .referrerPolicy(rp -> rp.policy(
                 org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
                     .ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
             .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true)
                 .maxAgeInSeconds(31536000)))
-        // In Spring Security 6.x an anchor filter must have a registered order, so custom
-        // filters cannot be anchored to one another. Each is anchored to a distinct built-in
-        // registered filter: JwtAuthFilter runs just before UsernamePasswordAuthenticationFilter,
-        // and RateLimitFilter runs before SecurityContextHolderFilter (which precedes it in the
-        // chain), preserving the intent that the rate limiter executes before JWT authentication.
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(rateLimitFilter, SecurityContextHolderFilter.class);
 
@@ -88,7 +85,11 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(List.of(allowedOrigins.split(",")));
+    List<String> origins = Arrays.stream(allowedOrigins.split(","))
+        .map(String::trim)
+        .filter(s -> !s.isEmpty())
+        .toList();
+    config.setAllowedOrigins(origins);
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
     config.setExposedHeaders(List.of("Retry-After"));

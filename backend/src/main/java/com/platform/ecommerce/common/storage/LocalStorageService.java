@@ -16,11 +16,6 @@ import org.springframework.stereotype.Service;
 
 /**
  * v1 local-filesystem {@link StorageService} implementation.
- *
- * <p>Security (Section 9.5): uploaded filenames are never used as store
- * paths — a UUID filename is generated and the original name is discarded.
- * Content-type sniffing is enforced by an allow-list; anything else is
- * rejected before touching the disk.</p>
  */
 @Service
 public class LocalStorageService implements StorageService {
@@ -44,6 +39,10 @@ public class LocalStorageService implements StorageService {
   @Override
   public String store(
       String container, String originalFilename, String contentType, InputStream data) {
+    if (contentType == null) {
+      throw new IllegalArgumentException("Content-Type cannot be null");
+    }
+
     String normalizedType = contentType.toLowerCase(Locale.ROOT).split(";")[0].trim();
     if (!ALLOWED_CONTENT_TYPES.contains(normalizedType)) {
       throw new IllegalArgumentException(
@@ -57,7 +56,8 @@ public class LocalStorageService implements StorageService {
 
     try {
       Files.createDirectories(containerDir);
-      String extension = extensionFor(contentType);
+      // FIX: Use normalizedType instead of raw contentType
+      String extension = extensionFor(normalizedType);
       String filename = UUID.randomUUID() + extension;
       Path target = containerDir.resolve(filename);
       Files.copy(data, target, StandardCopyOption.REPLACE_EXISTING);
@@ -71,11 +71,19 @@ public class LocalStorageService implements StorageService {
 
   @Override
   public void delete(String url) {
-    if (url == null || !url.startsWith("/uploads/")) {
+    if (url == null) {
       return;
     }
+
+    // Support both relative paths (/uploads/...) and absolute URLs (http://.../uploads/...)
+    int uploadsIdx = url.indexOf("/uploads/");
+    if (uploadsIdx == -1) {
+      return;
+    }
+
+    String relativePath = url.substring(uploadsIdx + "/uploads/".length());
     try {
-      Path file = uploadRoot.resolve(url.substring("/uploads/".length())).normalize();
+      Path file = uploadRoot.resolve(relativePath).normalize();
       if (file.startsWith(uploadRoot)) {
         Files.deleteIfExists(file);
       }
@@ -84,8 +92,8 @@ public class LocalStorageService implements StorageService {
     }
   }
 
-  private String extensionFor(String contentType) {
-    return switch (contentType) {
+  private String extensionFor(String normalizedType) {
+    return switch (normalizedType) {
       case "image/jpeg" -> ".jpg";
       case "image/png" -> ".png";
       case "image/webp" -> ".webp";

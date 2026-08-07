@@ -29,12 +29,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * One-time DummyJSON product import (Section 6). Runs as a background
- * job; status is stored in Redis so the admin UI can poll it.
+ * One-time DummyJSON product import.
  */
 @Service
 public class ProductImportService {
-
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ProductImportService.class);
   private static final String JOB_PREFIX = "import:job:";
 
   private final ProductRepository productRepository;
@@ -93,7 +92,7 @@ public class ProductImportService {
         try {
           importProduct(node, platformUser);
         } catch (Exception e) {
-          // skip individual failures
+          log.error("Import failed for product externalId={}", node.path("id").asLong(), e);
         }
         processed++;
         int pct = (int) ((double) processed / total * 100);
@@ -140,31 +139,47 @@ public class ProductImportService {
     product.setExternalId(externalId);
     product.setAverageRating(new BigDecimal(node.path("rating").asText("0")));
     product.setReviewCount(node.path("stock").isInt() ? node.path("stock").asInt() : 0);
-    productRepository.save(product);
+
+    // Save product and hold reference
+    Product savedProduct = productRepository.save(product);
 
     // Default variant
     ProductVariant variant = new ProductVariant();
-    variant.setProduct(product);
-    variant.setSku(product.getSku());
+    variant.setProduct(savedProduct);
+    variant.setSku(savedProduct.getSku());
     variant.setAttributesJson("{}");
     productVariantRepository.save(variant);
 
     // Images
-    for (JsonNode img : node.path("images")) {
-      try {
-        String url = storageService.store(
-            "products/" + product.getId(),
-            img.asText(),
-            "image/jpeg",
-            fetchStream(img.asText()));
-        ProductImage pi = new ProductImage();
-        pi.setProduct(product);
-        pi.setUrl(url);
-        pi.setDisplayOrder(0);
-        productImageRepository.save(pi);
-      } catch (Exception e) {
-        // skip failed image
+    List<String> imageUrls = new ArrayList<>();
+    if (node.has("images") && node.path("images").isArray()) {
+      for (JsonNode img : node.path("images")) {
+        imageUrls.add(img.asText());
       }
+    }
+    if (imageUrls.isEmpty() && node.has("thumbnail")) {
+      imageUrls.add(node.path("thumbnail").asText());
+    }
+
+    int displayOrder = 0;
+    for (String imageUrl : imageUrls) {
+      String finalUrl = imageUrl;
+      try {
+        finalUrl = storageService.store(
+            "products/" + savedProduct.getId(),
+            imageUrl,
+            "image/jpeg",
+            fetchStream(imageUrl));
+      } catch (Exception e) {
+        // Fallback to direct URL if downloading/storing fails
+        finalUrl = imageUrl;
+      }
+
+      ProductImage pi = new ProductImage();
+      pi.setProduct(savedProduct);
+      pi.setUrl(finalUrl);
+      pi.setDisplayOrder(displayOrder++);
+      productImageRepository.save(pi);
     }
   }
 
@@ -180,6 +195,8 @@ public class ProductImportService {
 
   private JsonNode fetchDummyJson() throws Exception {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+    factory.setConnectTimeout(10000);
+    factory.setReadTimeout(10000);
     ClientHttpRequest request = factory.createRequest(new java.net.URI(dummyJsonUrl), HttpMethod.GET);
     try (ClientHttpResponse response = request.execute()) {
       return objectMapper.readTree(response.getBody());
@@ -188,6 +205,8 @@ public class ProductImportService {
 
   private InputStream fetchStream(String url) throws Exception {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+    factory.setConnectTimeout(5000);
+    factory.setReadTimeout(5000);
     ClientHttpRequest request = factory.createRequest(new java.net.URI(url), HttpMethod.GET);
     ClientHttpResponse response = request.execute();
     return response.getBody();

@@ -14,6 +14,8 @@ import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * A specific purchasable SKU-variant of a product (e.g. "Blue / Large").
@@ -40,6 +42,7 @@ public class ProductVariant {
   @Column(name = "price_override", precision = 12, scale = 2)
   private BigDecimal priceOverride;
 
+  @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "attributes_json", nullable = false, columnDefinition = "jsonb")
   private String attributesJson = "{}";
 

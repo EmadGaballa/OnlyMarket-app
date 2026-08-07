@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -47,13 +45,18 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      DB_URL: jdbc:postgresql://postgres:5432/ecommerce
-      DB_USERNAME: ecommerce
-      DB_PASSWORD: ecommerce
+      # Updated to match Spring Boot property mappings
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ecommerce
+      SPRING_DATASOURCE_USERNAME: ecommerce
+      SPRING_DATASOURCE_PASSWORD: ecommerce
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_REDIS_HOST: redis
       REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
       REDIS_PORT: 6379
       JWT_SECRET: dev-only-secret-key-change-me-in-production-0123456789abcdef
       CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000
+      APP_UPLOAD_DIR: /app/uploads
       UPLOAD_DIR: /app/uploads
     ports:
       - "8080:8080"

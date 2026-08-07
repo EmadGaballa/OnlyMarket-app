@@ -1,20 +1,42 @@
 spring:
-  datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/ecommerce}
-    username: ${DB_USERNAME:ecommerce}
-    password: ${DB_PASSWORD:ecommerce}
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
-  jpa:
-    show-sql: true
+  config:
+    activate:
+      on-profile: dev
 
-app:
-  cors:
-    allowed-origins: http://localhost:5173,http://localhost:3000
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ecommerce_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+
+  jpa:
+    open-in-view: false
+    show-sql: false # Prevents duplicate console prints
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false # Disables multi-line query formatting (stops log spam)
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 10m
+      cache-null-values: false
 
 logging:
   level:
+    root: INFO
     com.platform.ecommerce: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.springframework.security: DEBUG
+    org.hibernate.SQL: WARN # Set to DEBUG only when actively debugging queries

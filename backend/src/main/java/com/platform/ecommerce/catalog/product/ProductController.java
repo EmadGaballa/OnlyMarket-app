@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
-import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -55,8 +54,9 @@ public class ProductController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(required = false) String sort) {
+    String normalizedSort = normalizeSort(sort);
     return ResponseEntity.ok(productService.searchPublished(
-        search, categoryId, brandId, minPrice, maxPrice, page, size, sort));
+        search, categoryId, brandId, minPrice, maxPrice, page, size, normalizedSort));
   }
 
   @GetMapping("/{slug}")
@@ -121,11 +121,54 @@ public class ProductController {
       @RequestParam(required = false) String sort,
       Authentication authentication) {
     Long sellerId = currentUserId(authentication);
-    return ResponseEntity.ok(productService.searchBySeller(sellerId, status, search, page, size, sort));
+    String normalizedSort = normalizeSort(sort);
+    return ResponseEntity.ok(productService.searchBySeller(sellerId, status, search, page, size, normalizedSort));
   }
 
   private Long currentUserId(Authentication authentication) {
     var principal = (UserDetails) authentication.getPrincipal();
     return productService.resolveUserIdByEmail(principal.getUsername());
+  }
+
+  /**
+   * Normalizes incoming sort params like "price_desc" or "price,desc" 
+   * into valid JPA entity field names like "basePrice,desc".
+   */
+  private String normalizeSort(String sort) {
+    if (sort == null || sort.isBlank()) {
+      return "createdAt,desc";
+    }
+
+    String normalized = sort.trim();
+    String field;
+    String direction = "asc";
+
+    if (normalized.contains(",")) {
+      String[] parts = normalized.split(",");
+      field = parts[0].trim();
+      if (parts.length > 1) {
+        direction = parts[1].trim();
+      }
+    } else if (normalized.contains("_")) {
+      int lastUnderscore = normalized.lastIndexOf('_');
+      String possibleDir = normalized.substring(lastUnderscore + 1);
+      if ("asc".equalsIgnoreCase(possibleDir) || "desc".equalsIgnoreCase(possibleDir)) {
+        field = normalized.substring(0, lastUnderscore);
+        direction = possibleDir;
+      } else {
+        field = normalized;
+      }
+    } else {
+      field = normalized;
+    }
+
+    // Map frontend aliases to actual JPA entity field names
+    if ("price".equalsIgnoreCase(field)) {
+      field = "basePrice";
+    } else if ("newest".equalsIgnoreCase(field) || "date".equalsIgnoreCase(field)) {
+      field = "createdAt";
+    }
+
+    return field + "," + direction.toLowerCase();
   }
 }
