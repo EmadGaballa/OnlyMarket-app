@@ -10,6 +10,12 @@ spring:
       max-file-size: 5MB
       max-request-size: 20MB
 
+  # Hibernate Batch Fetching Optimization (Fixes N+1 for collections)
+  jpa:
+    properties:
+      hibernate:
+        default_batch_fetch_size: 20
+
   # OpenAPI / Swagger
   springdoc:
     swagger-ui:

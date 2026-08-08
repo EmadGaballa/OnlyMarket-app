@@ -1,46 +1,277 @@
+/* Page Layout */
 .page {
-  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 180px);
+  padding: 32px 20px;
+  background-color: var(--color-bg);
+  transition: background-color var(--transition-fast, 0.2s ease);
 }
 
-.page h1 {
-  font-family: var(--font-serif);
-  font-size: 2rem;
-  margin-bottom: 24px;
-}
-
+/* Main Profile Card */
 .card {
   background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  padding: 32px;
-  box-shadow: var(--shadow-md);
-  max-width: 600px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 12px);
+  padding: 36px;
+  width: 100%;
+  max-width: 680px;
+  box-shadow: var(--shadow-md, 0 8px 30px rgba(0, 0, 0, 0.08));
+  box-sizing: border-box;
+  transition:
+    background-color var(--transition-fast, 0.2s ease),
+    border-color var(--transition-fast, 0.2s ease),
+    box-shadow var(--transition-fast, 0.2s ease);
 }
 
-.profile-field {
-  margin-bottom: 20px;
+/* Profile Header & Avatar */
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
-.profile-field label {
-  display: block;
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.headerInfo h1 {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.emailText {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Divider Line */
+.divider {
+  border: none;
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 28px 0;
+  transition: background-color var(--transition-fast, 0.2s ease);
+}
+
+/* Fields Grid Layout */
+.fieldsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.profileField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-secondary);
+}
+
+.fieldIcon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.label {
+  font-size: 0.8rem;
   font-weight: 600;
-  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+.value {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text);
+  margin: 0;
+  word-break: break-word;
+}
+
+.notSet {
+  color: var(--color-text-secondary);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Account Status Badge (Dark & Light Mode Adaptive) */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: color-mix(in srgb, var(--color-text-secondary) 12%, transparent);
+  color: var(--color-text-secondary);
+  border: 1px solid
+    color-mix(in srgb, var(--color-text-secondary) 25%, transparent);
+}
+
+.statusBadge.active {
+  background: color-mix(in srgb, #10b981 12%, transparent);
+  color: #10b981;
+  border: 1px solid color-mix(in srgb, #10b981 30%, transparent);
+}
+
+/* Role Badges */
+.rolesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+  text-transform: capitalize;
+}
+
+/* Loading & Error States */
+.loadingCard,
+.errorCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 12px);
+  padding: 48px 32px;
+  width: 100%;
+  max-width: 480px;
+  text-align: center;
+  box-shadow: var(--shadow-md, 0 8px 30px rgba(0, 0, 0, 0.08));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-sizing: border-box;
+  transition:
+    background-color var(--transition-fast, 0.2s ease),
+    border-color var(--transition-fast, 0.2s ease);
+}
+
+.loadingCard p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}
+
+.spinner {
+  color: var(--color-primary);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorCard {
+  border-color: color-mix(
+    in srgb,
+    var(--color-error, #ef4444) 30%,
+    transparent
+  );
+}
+
+.errorIcon {
+  color: var(--color-error, #ef4444);
+}
+
+.errorCard h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.errorCard p {
+  margin: 0;
   color: var(--color-text-secondary);
   font-size: 0.9rem;
+  line-height: 1.4;
 }
 
-.profile-field p {
-  font-size: 1.1rem;
-  color: var(--color-text);
+.retryBtn {
+  margin-top: 8px;
+  padding: 10px 20px;
+  background: var(--color-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast, 0.2s ease),
+    transform var(--transition-fast, 0.2s ease);
 }
 
-.loading,
-.empty-state,
-.error {
-  text-align: center;
-  padding: 48px 24px;
-  color: var(--color-text-secondary);
+.retryBtn:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
 }
 
-.error {
-  color: var(--color-error);
+.retryBtn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 600px) {
+  .fieldsGrid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .card {
+    padding: 24px 20px;
+  }
+
+  .profileHeader {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .avatar {
+    width: 72px;
+    height: 72px;
+    font-size: 1.75rem;
+  }
 }

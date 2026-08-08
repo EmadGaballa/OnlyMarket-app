@@ -1,4 +1,4 @@
-const API_BASE = '/api/v1';
+const API_BASE = "/api/v1";
 
 let accessToken: string | null = null;
 let refreshPromise: Promise<boolean> | null = null;
@@ -10,10 +10,10 @@ export function setAccessToken(token: string | null) {
 async function request<T>(
   path: string,
   options: RequestInit = {},
-  isRetry = false
+  isRetry = false,
 ): Promise<T> {
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     ...options.headers,
   };
@@ -21,7 +21,7 @@ async function request<T>(
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
-    credentials: 'include',
+    credentials: "include",
   });
 
   if (response.status === 401 && !isRetry) {
@@ -35,7 +35,7 @@ async function request<T>(
       return request<T>(path, options, true);
     }
     logout();
-    throw new Error('Session expired');
+    throw new Error("Session expired");
   }
 
   if (!response.ok) {
@@ -56,9 +56,9 @@ async function refreshToken(): Promise<boolean> {
   refreshPromise = (async () => {
     try {
       const response = await fetch(`${API_BASE}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
       });
       if (!response.ok) return false;
       const data = (await response.json()) as { accessToken: string };
@@ -81,8 +81,8 @@ function logout() {
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'POST', body: JSON.stringify(body) }),
+    request<T>(path, { method: "POST", body: JSON.stringify(body) }),
   put: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
-  delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+    request<T>(path, { method: "PUT", body: JSON.stringify(body) }),
+  delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 };

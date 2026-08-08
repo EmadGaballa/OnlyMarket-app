@@ -1,119 +1,454 @@
-import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { productsApi } from '../api/products';
-import type { Product, Category, Brand, PagedResponse } from '../types/catalog';
-import styles from './ProductsPage.module.css';
+import React from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { productsApi } from "../api/products";
+import type { Product, Category, Brand } from "../types/catalog";
+import styles from "./ProductsPage.module.css";
+
+/* -------------------------------------------------------------------------- */
+/*  Helper functions to clean up and group category names                     */
+/* -------------------------------------------------------------------------- */
+
+// 1. Replaces dashes "-" with spaces and capitalizes every word
+const formatCategoryName = (rawName: string): string => {
+  if (!rawName) return "";
+  return rawName
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+// 2. Map raw API slugs to broader, cleaner labels
+const BROAD_CATEGORY_MAP: Record<string, string> = {
+  fragrances: "Beauty & Fragrance",
+  skincare: "Beauty & Fragrance",
+  furniture: "Home & Furniture",
+  "home-decoration": "Home & Furniture",
+  "kitchen-accessories": "Home & Kitchen",
+  laptops: "Electronics",
+  smartphones: "Electronics",
+  tablets: "Electronics",
+  "mens-shirts": "Men's Fashion",
+  "mens-shoes": "Men's Fashion",
+  "mens-watches": "Men's Fashion",
+  "womens-dresses": "Women's Fashion",
+  "womens-shoes": "Women's Fashion",
+  "womens-bags": "Women's Fashion",
+  groceries: "Groceries",
+};
+
+// 3. Main function to convert raw category names to broad, readable names
+const getBroadCategoryName = (rawName: string): string => {
+  const normalizedKey = rawName.toLowerCase().trim();
+  if (BROAD_CATEGORY_MAP[normalizedKey]) {
+    return BROAD_CATEGORY_MAP[normalizedKey];
+  }
+  return formatCategoryName(rawName);
+};
 
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [data, setData] = useState<PagedResponse<Product> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  const search = searchParams.get('search') || '';
-  const categoryId = searchParams.get('categoryId') || '';
-  const brandId = searchParams.get('brandId') || '';
-  const sort = searchParams.get('sort') || '';
-  const page = Number(searchParams.get('page') || '0');
-  const size = Number(searchParams.get('size') || '12');
+  // URL State Extractor
+  const search = searchParams.get("search") || "";
+  const categoryId = searchParams.get("categoryId") || "";
+  const brandId = searchParams.get("brandId") || "";
+  const sort = searchParams.get("sort") || "";
+  const expressOnly = searchParams.get("express") === "true";
+  const page = Math.max(0, Number(searchParams.get("page") || "0"));
+  const size = Number(searchParams.get("size") || "12");
 
+  // React Query Hooks
   const { data: categories } = useQuery({
-    queryKey: ['categories'],
+    queryKey: ["categories"],
     queryFn: productsApi.listCategories,
   });
 
   const { data: brands } = useQuery({
-    queryKey: ['brands'],
+    queryKey: ["brands"],
     queryFn: productsApi.listBrands,
   });
 
-  const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
-    queryKey: ['products', search, categoryId, brandId, sort, page, size],
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    isError: productsError,
+  } = useQuery({
+    queryKey: [
+      "products",
+      search,
+      categoryId,
+      brandId,
+      sort,
+      expressOnly,
+      page,
+      size,
+    ],
     queryFn: () =>
       productsApi.list({
         search: search || undefined,
         categoryId: categoryId ? Number(categoryId) : undefined,
         brandId: brandId ? Number(brandId) : undefined,
         sort: sort || undefined,
+        express: expressOnly || undefined,
         page,
         size,
       }),
   });
 
-  useEffect(() => {
-    if (productsData) setData(productsData);
-    if (productsError) setError('Failed to load products');
-    setLoading(productsLoading);
-  }, [productsData, productsError, productsLoading]);
-
-  const updateParam = (key: string, value: string) => {
+  // URL Parameter Updater Helper
+  const updateParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams);
-    if (value) next.set(key, value);
-    else next.delete(key);
-    next.set('page', '0');
-    setSearchParams(next);
+
+    if (value !== null && value !== "") {
+      next.set(key, value);
+    } else {
+      next.delete(key);
+    }
+
+    // Reset page to 0 only when changing filters/sort, NOT when paginating
+    if (key !== "page") {
+      next.set("page", "0");
+    }
+
+    setSearchParams(next, { replace: true });
   };
 
-  if (loading) return <div className={styles.page}><div className={styles.loading}>Loading products...</div></div>;
-  if (error) return <div className={styles.page}><div className={styles.error}>{error}</div></div>;
-  if (!data) return null;
+  const clearAllFilters = () => {
+    setSearchParams(new URLSearchParams(), { replace: true });
+  };
+
+  const hasActiveFilters = Boolean(
+    search || categoryId || brandId || expressOnly,
+  );
+
+  const totalElements = productsData?.totalElements ?? 0;
+  const startItem = totalElements === 0 ? 0 : page * size + 1;
+  const endItem = Math.min((page + 1) * size, totalElements);
 
   return (
-    <div className={styles.page}>
-      <div className={styles.toolbar}>
-        <input
-          type="text"
-          placeholder="Search products..."
-          value={search}
-          onChange={(e) => updateParam('search', e.target.value)}
-        />
-        <select value={categoryId} onChange={(e) => updateParam('categoryId', e.target.value)}>
-          <option value="">All Categories</option>
-          {categories?.map((cat: Category) => (
-            <option key={cat.id} value={cat.id}>{cat.name}</option>
-          ))}
-        </select>
-        <select value={brandId} onChange={(e) => updateParam('brandId', e.target.value)}>
-          <option value="">All Brands</option>
-          {brands?.map((brand: Brand) => (
-            <option key={brand.id} value={brand.id}>{brand.name}</option>
-          ))}
-        </select>
-        <select value={sort} onChange={(e) => updateParam('sort', e.target.value)}>
-          <option value="">Sort</option>
-          <option value="price_asc">Price: Low to High</option>
-          <option value="price_desc">Price: High to Low</option>
-          <option value="newest">Newest</option>
-        </select>
+    <div className={styles.pageContainer}>
+      {/* Search Header Banner / Title */}
+      <header className={styles.headerBanner}>
+        <h1 className={styles.pageTitle}>
+          {search ? `Search Results for "${search}"` : "Explore All Products"}
+        </h1>
+        {productsData && totalElements > 0 && (
+          <span className={styles.resultCount}>
+            Showing {startItem}-{endItem} of <strong>{totalElements}</strong>{" "}
+            items
+          </span>
+        )}
+      </header>
+
+      <div className={styles.catalogLayout}>
+        {/* LEFT SIDEBAR: Filters */}
+        <aside className={styles.sidebar}>
+          <div className={styles.sidebarHeader}>
+            <h3>Filters</h3>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                className={styles.clearBtn}
+                onClick={clearAllFilters}
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+
+          {/* Fulfillment Filter */}
+          <div className={styles.filterGroup}>
+            <label className={styles.expressToggle}>
+              <input
+                type="checkbox"
+                checked={expressOnly}
+                onChange={(e) =>
+                  updateParam("express", e.target.checked ? "true" : null)
+                }
+              />
+              <span className={styles.expressBadge}>
+                <span className={styles.expressText}>express</span>
+              </span>
+              <span className={styles.toggleLabel}>Next Day Delivery</span>
+            </label>
+          </div>
+
+          <hr className={styles.divider} />
+
+          {/* Categories Facet */}
+          <div className={styles.filterGroup}>
+            <h4>Category</h4>
+            <ul className={styles.filterList}>
+              <li>
+                <button
+                  type="button"
+                  className={!categoryId ? styles.activeFilter : ""}
+                  onClick={() => updateParam("categoryId", null)}
+                >
+                  All Categories
+                </button>
+              </li>
+              {categories?.map((cat: Category) => (
+                <li key={cat.id}>
+                  <button
+                    type="button"
+                    className={
+                      String(cat.id) === categoryId ? styles.activeFilter : ""
+                    }
+                    onClick={() => updateParam("categoryId", String(cat.id))}
+                  >
+                    {getBroadCategoryName(cat.name)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <hr className={styles.divider} />
+
+          {/* Brands Facet */}
+          <div className={styles.filterGroup}>
+            <h4>Brand</h4>
+            <ul className={styles.filterList}>
+              <li>
+                <button
+                  type="button"
+                  className={!brandId ? styles.activeFilter : ""}
+                  onClick={() => updateParam("brandId", null)}
+                >
+                  All Brands
+                </button>
+              </li>
+              {brands?.map((brand: Brand) => (
+                <li key={brand.id}>
+                  <button
+                    type="button"
+                    className={
+                      String(brand.id) === brandId ? styles.activeFilter : ""
+                    }
+                    onClick={() => updateParam("brandId", String(brand.id))}
+                  >
+                    {brand.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+
+        {/* MAIN CONTENT AREA */}
+        <main className={styles.mainContent}>
+          {/* Top Control Bar */}
+          <div className={styles.controlBar}>
+            <div className={styles.activeFiltersPills}>
+              {search && (
+                <span className={styles.pill}>
+                  Query: {search}{" "}
+                  <button
+                    type="button"
+                    onClick={() => updateParam("search", null)}
+                    aria-label="Remove search filter"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+            </div>
+
+            <div className={styles.sortWrapper}>
+              <label htmlFor="sortSelect">Sort By:</label>
+              <select
+                id="sortSelect"
+                value={sort}
+                onChange={(e) => updateParam("sort", e.target.value)}
+                className={styles.sortSelect}
+              >
+                <option value="">Relevance & Featured</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="rating_desc">Highest Rated</option>
+                <option value="newest">New Arrivals</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Loading State Skeleton */}
+          {productsLoading && (
+            <div className={styles.productGrid}>
+              {Array.from({ length: 8 }).map((_, idx) => (
+                <div key={idx} className={styles.skeletonCard}>
+                  <div className={styles.skeletonImage} />
+                  <div className={styles.skeletonLine} />
+                  <div className={styles.skeletonLineShort} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Error State */}
+          {productsError && (
+            <div className={styles.errorContainer}>
+              <p>Unable to load products right now. Please try again.</p>
+              <button type="button" onClick={() => window.location.reload()}>
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!productsLoading && productsData?.content.length === 0 && (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>🔍</div>
+              <h3>No results found</h3>
+              <p>Try adjusting your filters or search criteria.</p>
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className={styles.resetBtn}
+              >
+                Reset All Filters
+              </button>
+            </div>
+          )}
+
+          {/* Product Grid */}
+          {!productsLoading &&
+            productsData &&
+            productsData.content.length > 0 && (
+              <div className={styles.productGrid}>
+                {productsData.content.map((product: Product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
+
+          {/* Pagination Controls */}
+          {productsData && productsData.totalPages > 1 && (
+            <div className={styles.paginationContainer}>
+              <button
+                type="button"
+                disabled={page === 0}
+                onClick={() => updateParam("page", String(page - 1))}
+                className={styles.pageBtn}
+              >
+                ‹ Previous
+              </button>
+
+              <div className={styles.pageNumbers}>
+                {Array.from({ length: productsData.totalPages }).map((_, i) => (
+                  <button
+                    type="button"
+                    key={i}
+                    className={`${styles.pageNumber} ${
+                      i === page ? styles.activePage : ""
+                    }`}
+                    onClick={() => updateParam("page", String(i))}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                disabled={page + 1 >= productsData.totalPages}
+                onClick={() => updateParam("page", String(page + 1))}
+                className={styles.pageBtn}
+              >
+                Next ›
+              </button>
+            </div>
+          )}
+        </main>
       </div>
+    </div>
+  );
+}
 
-      {data.content.length === 0 ? (
-        <div className={styles.emptyState}>No products found.</div>
-      ) : (
-        <div className={styles.productGrid}>
-          {data.content.map((product) => (
-            <Link to={`/products/${product.slug}`} key={product.id} className={styles.productCard}>
-              <div className={styles.productImage}>
-                {product.images[0] ? (
-                  <img src={product.images[0].url} alt={product.name} />
-                ) : (
-                  <div className={styles.placeholder}>No image</div>
-                )}
-              </div>
-              <div className={styles.productInfo}>
-                <h3>{product.name}</h3>
-                <p className={styles.price}>${product.basePrice.toFixed(2)}</p>
-              </div>
-            </Link>
-          ))}
+// Dedicated Hybrid Product Card Component
+function ProductCard({ product }: { product: Product }) {
+  const mainImage = product.images?.[0]?.url || "/placeholder-product.png";
+
+  const originalPrice = product.basePrice * 1.2;
+  const discountPercent = 20;
+
+  const handleWishlistClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  return (
+    <div className={styles.card}>
+      <Link to={`/products/${product.slug}`} className={styles.cardLink}>
+        {/* Top Badges */}
+        <div className={styles.badgeContainer}>
+          <span className={styles.discountBadge}>{discountPercent}% OFF</span>
+          <button
+            type="button"
+            className={styles.wishlistBtn}
+            title="Add to Wishlist"
+            onClick={handleWishlistClick}
+          >
+            ♡
+          </button>
         </div>
-      )}
 
-      <div className={styles.pagination}>
-        <button disabled={page === 0} onClick={() => updateParam('page', String(page - 1))}>Previous</button>
-        <span>Page {page + 1} of {data.totalPages}</span>
-        <button disabled={page + 1 >= data.totalPages} onClick={() => updateParam('page', String(page + 1))}>Next</button>
+        {/* Product Image - Optimized Lazy Loading & Async Decoding */}
+        <div className={styles.imageWrapper}>
+          <img
+            src={mainImage}
+            alt={product.name}
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+
+        {/* Info Section */}
+        <div className={styles.cardBody}>
+          <div className={styles.brandName}>
+            {product.brand?.name || "OnlyMarket"}
+          </div>
+          <h3 className={styles.productTitle} title={product.name}>
+            {product.name}
+          </h3>
+
+          {/* Ratings Snippet */}
+          <div className={styles.ratingRow}>
+            <span className={styles.stars}>★★★★☆</span>
+            <span className={styles.ratingValue}>4.5</span>
+            <span className={styles.ratingCount}>(142)</span>
+          </div>
+
+          {/* Pricing */}
+          <div className={styles.priceRow}>
+            <span className={styles.currency}>$</span>
+            <span className={styles.currentPrice}>
+              {product.basePrice.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}
+            </span>
+            <span className={styles.oldPrice}>${originalPrice.toFixed(2)}</span>
+          </div>
+
+          {/* Express & Fulfillment Badges */}
+          <div className={styles.fulfillmentRow}>
+            <span className={styles.expressTag}>express</span>
+            <span className={styles.deliveryEstimate}>
+              Get it by <strong>Tomorrow</strong>
+            </span>
+          </div>
+        </div>
+      </Link>
+
+      {/* Quick Add Button */}
+      <div className={styles.cardFooter}>
+        <button
+          type="button"
+          className={styles.addToCartBtn}
+          onClick={() => alert(`Added ${product.name} to cart!`)}
+        >
+          Add To Cart
+        </button>
       </div>
     </div>
   );

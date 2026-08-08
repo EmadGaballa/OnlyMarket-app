@@ -5,27 +5,27 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 /** Data access for {@link Product} with search/filter/sort/pagination. */
+@Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    @Query("""
-            SELECT DISTINCT p FROM Product p
-            LEFT JOIN FETCH p.category
-            LEFT JOIN FETCH p.brand
-            WHERE p.slug = :slug
-            """)
-    Optional<Product> findBySlug(@Param("slug") String slug);
+    @EntityGraph(attributePaths = {"category", "brand", "images", "variants"})
+    Optional<Product> findBySlug(String slug);
 
+    @EntityGraph(attributePaths = {"category", "brand", "images", "variants"})
     Optional<Product> findByExternalId(Long externalId);
 
     boolean existsBySlug(String slug);
 
     boolean existsBySku(String sku);
 
+    @EntityGraph(attributePaths = {"category", "brand"})
     @Query("""
             SELECT p FROM Product p
             WHERE p.status = com.platform.ecommerce.catalog.product.domain.Product.Status.PUBLISHED
@@ -44,6 +44,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("maxPrice") BigDecimal maxPrice,
             Pageable pageable);
 
+    @EntityGraph(attributePaths = {"category", "brand"})
     @Query("""
             SELECT p FROM Product p
             WHERE p.seller.id = :sellerId
@@ -56,6 +57,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("search") String search,
             Pageable pageable);
 
+    @EntityGraph(attributePaths = {"category", "brand"})
     @Query("""
             SELECT p FROM Product p
             WHERE (:status IS NULL OR p.status = :status)

@@ -1,7 +1,10 @@
 package com.platform.ecommerce.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Duration;
 import org.springframework.cache.CacheManager;
@@ -17,12 +20,6 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
  * Redis configuration for caching and the JWT blacklist.
- *
- * <p>
- * Cache keys are prefixed with {@code ecommerce:} to avoid collisions
- * with other apps sharing the same Redis instance. Default TTL is 10
- * minutes (overridable per-cache via {@code @Cacheable} attributes).
- * </p>
  */
 @Configuration
 public class RedisConfig {
@@ -31,6 +28,14 @@ public class RedisConfig {
     ObjectMapper objectMapper = new ObjectMapper();
     objectMapper.registerModule(new JavaTimeModule());
     objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+    // Enables @class metadata in JSON so Jackson deserializes directly back into
+    // DTOs
+    PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
+        .allowIfBaseType(Object.class)
+        .build();
+    objectMapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.EVERYTHING, JsonTypeInfo.As.PROPERTY);
+
     return new GenericJackson2JsonRedisSerializer(objectMapper);
   }
 

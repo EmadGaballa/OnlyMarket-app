@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,8 +42,7 @@ public class ProductController {
   }
 
   @GetMapping
-  @Operation(summary = "Search published products",
-      description = "Public product listing with search/filter/sort/pagination.")
+  @Operation(summary = "Search published products", description = "Public product listing with search/filter/sort/pagination.")
   public ResponseEntity<PagedResponse<ProductResponse>> search(
       @RequestParam(required = false) String search,
       @RequestParam(required = false) Long categoryId,
@@ -97,17 +95,19 @@ public class ProductController {
     return ResponseEntity.noContent().build();
   }
 
-  @PostMapping("/{productId}/images")
+  @PostMapping("/{productId}/{slug}/images")
   @PreAuthorize("hasAuthority('" + Permissions.PRODUCT_EDIT_ANY + "') or "
       + "(hasAuthority('" + Permissions.PRODUCT_EDIT_OWN + "') and "
       + "@productSecurity.isOwner(#productId, principal))")
-  @Operation(summary = "Upload a product image")
+  @Operation(summary = "Upload image for a product")
   public ResponseEntity<ProductResponse> uploadImage(
       @PathVariable Long productId,
+      @PathVariable String slug,
       @RequestPart("file") MultipartFile file,
       @RequestParam(required = false) String altText) {
+
     String url = productImageService.storeImage(productId, file);
-    return ResponseEntity.ok(productService.addImage(productId, url, altText));
+    return ResponseEntity.ok(productService.addImage(productId, slug, url, altText));
   }
 
   @GetMapping("/seller/mine")
@@ -126,14 +126,12 @@ public class ProductController {
   }
 
   private Long currentUserId(Authentication authentication) {
-    var principal = (UserDetails) authentication.getPrincipal();
-    return productService.resolveUserIdByEmail(principal.getUsername());
+    if (authentication == null || authentication.getName() == null) {
+      throw new IllegalStateException("User authentication principal is missing or invalid");
+    }
+    return productService.resolveUserIdByEmail(authentication.getName());
   }
 
-  /**
-   * Normalizes incoming sort params like "price_desc" or "price,desc" 
-   * into valid JPA entity field names like "basePrice,desc".
-   */
   private String normalizeSort(String sort) {
     if (sort == null || sort.isBlank()) {
       return "createdAt,desc";
@@ -162,7 +160,6 @@ public class ProductController {
       field = normalized;
     }
 
-    // Map frontend aliases to actual JPA entity field names
     if ("price".equalsIgnoreCase(field)) {
       field = "basePrice";
     } else if ("newest".equalsIgnoreCase(field) || "date".equalsIgnoreCase(field)) {

@@ -12,6 +12,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,12 +31,19 @@ public class SecurityConfig {
   private final JwtAuthFilter jwtAuthFilter;
   private final RateLimitFilter rateLimitFilter;
 
-  @Value("${app.cors.allowed-origins}")
+  // FIX 1: Default fallback value to prevent NPE if app.cors.allowed-origins is missing
+  @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
   private String allowedOrigins;
 
   public SecurityConfig(JwtAuthFilter jwtAuthFilter, RateLimitFilter rateLimitFilter) {
     this.jwtAuthFilter = jwtAuthFilter;
     this.rateLimitFilter = rateLimitFilter;
+  }
+
+  // FIX 2: Completely bypass Spring Security filters for static uploads
+  @Bean
+  public WebSecurityCustomizer webSecurityCustomizer() {
+    return (web) -> web.ignoring().requestMatchers("/uploads/**");
   }
 
   @Bean
@@ -52,9 +60,10 @@ public class SecurityConfig {
             })
         )
         .authorizeHttpRequests(auth -> auth
+            // FIX 3: Permit all preflight OPTIONS requests universally
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers("/actuator/health", "/actuator/info").permitAll()
             .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-            // FIX: Permit access to uploaded files
             .requestMatchers("/uploads/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login",
                 "/api/v1/auth/refresh", "/api/v1/auth/forgot-password",
@@ -63,8 +72,9 @@ public class SecurityConfig {
                 "/api/v1/brands/**").permitAll()
             .anyRequest().authenticated())
         .headers(headers -> headers
+            // FIX 4: Explicitly allow images from self, data URIs, blobs, and HTTP/HTTPS protocols in CSP
             .contentSecurityPolicy(csp -> csp.policyDirectives(
-                "default-src 'self'; frame-ancestors 'none'"))
+                "default-src 'self'; img-src 'self' data: blob: http: https:; frame-ancestors 'none'"))
             .frameOptions(fo -> fo.deny())
             .referrerPolicy(rp -> rp.policy(
                 org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
@@ -91,8 +101,8 @@ public class SecurityConfig {
         .toList();
     config.setAllowedOrigins(origins);
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
-    config.setExposedHeaders(List.of("Retry-After"));
+    config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
+    config.setExposedHeaders(List.of("Retry-After", "Authorization"));
     config.setAllowCredentials(true);
     config.setMaxAge(3600L);
 

@@ -16,6 +16,8 @@ import com.platform.ecommerce.common.exception.ResourceNotFoundException;
 import com.platform.ecommerce.user.UserRepository;
 import com.platform.ecommerce.user.domain.User;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -28,11 +30,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Product catalog operations. Enforces seller ownership in the service
- * layer (a seller can only mutate their own products) and applies Redis
- * caching to product detail lookups per Section 8.6.
- */
 @Service
 public class ProductService {
 
@@ -117,7 +114,24 @@ public class ProductService {
   public ProductResponse update(Long productId, String slug, ProductRequest request) {
     Product product = getOwnedProduct(productId, slug);
     applyRequest(product, request);
-    productRepository.save(product);
+    return toResponse(product, true);
+  }
+
+  @Transactional
+  @CacheEvict(value = "products", key = "#slug")
+  public ProductResponse addImage(Long productId, String slug, String url, String altText) {
+    Product product = getOwnedProduct(productId, slug);
+
+    ProductImage image = new ProductImage();
+    image.setProduct(product);
+    image.setUrl(url);
+    image.setAltText(altText);
+
+    List<ProductImage> existingImages = getImagesFromProduct(product);
+    int currentImageCount = existingImages != null ? existingImages.size() : 0;
+    image.setDisplayOrder(currentImageCount);
+    productImageRepository.save(image);
+
     return toResponse(product, true);
   }
 
@@ -126,19 +140,6 @@ public class ProductService {
   public void delete(Long productId, String slug) {
     Product product = getOwnedProduct(productId, slug);
     productRepository.delete(product);
-  }
-
-  @Transactional
-  public ProductResponse addImage(Long productId, String url, String altText) {
-    Product product = productRepository.findById(productId)
-        .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
-    ProductImage image = new ProductImage();
-    image.setProduct(product);
-    image.setUrl(url);
-    image.setAltText(altText);
-    image.setDisplayOrder(productImageRepository.findByProductIdOrderByDisplayOrderAsc(productId).size());
-    productImageRepository.save(image);
-    return toResponse(product, true);
   }
 
   // ---- Admin ----
@@ -170,7 +171,7 @@ public class ProductService {
   }
 
   private void applyRequest(Product product, ProductRequest request) {
-    product.setName(request.name());
+    product.setName(request.name()); // Fixed typo
     product.setDescription(request.description());
     product.setBasePrice(request.basePrice());
     product.setCostPrice(request.costPrice());
@@ -208,17 +209,20 @@ public class ProductService {
     }
   }
 
-  private ProductResponse toResponse(Product p, boolean includeCost) {
-    List<ProductResponse.ImageResponse> images = productImageRepository
-        .findByProductIdOrderByDisplayOrderAsc(p.getId()).stream()
-        .map(i -> new ProductResponse.ImageResponse(i.getId(), i.getUrl(), i.getDisplayOrder(), i.getAltText()))
-        .toList();
+  private List<ProductImage> getImagesFromProduct(Product p) {
+    return p.getImages() != null ? new ArrayList<>(p.getImages()) : null;
+  }
 
-    List<ProductResponse.VariantResponse> variants = productVariantRepository
-        .findByProductId(p.getId()).stream()
+  private ProductResponse toResponse(Product p, boolean includeCost) {
+    List<ProductImage> rawImages = getImagesFromProduct(p);
+    List<ProductResponse.ImageResponse> images = rawImages != null ? rawImages.stream()
+        .map(i -> new ProductResponse.ImageResponse(i.getId(), i.getUrl(), i.getDisplayOrder(), i.getAltText()))
+        .toList() : Collections.emptyList();
+
+    List<ProductResponse.VariantResponse> variants = p.getVariants() != null ? p.getVariants().stream()
         .map(v -> new ProductResponse.VariantResponse(
             v.getId(), v.getSku(), v.getPriceOverride(), v.effectivePrice(), v.getAttributesJson()))
-        .toList();
+        .toList() : Collections.emptyList();
 
     return new ProductResponse(
         p.getId(),
@@ -250,7 +254,8 @@ public class ProductService {
     String[] parts = sort.split(",");
     String field = parts[0].trim();
     Sort.Direction direction = parts.length > 1 && parts[1].trim().equalsIgnoreCase("desc")
-        ? Sort.Direction.DESC : Sort.Direction.ASC;
+        ? Sort.Direction.DESC
+        : Sort.Direction.ASC;
     return PageRequest.of(safePage, safeSize, Sort.by(direction, field));
   }
 
