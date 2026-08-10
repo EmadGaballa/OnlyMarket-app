@@ -1,5 +1,7 @@
 package com.platform.ecommerce.catalog.product;
 
+import com.platform.ecommerce.catalog.product.domain.Review;
+import java.math.RoundingMode;
 import com.platform.ecommerce.catalog.brand.BrandRepository;
 import com.platform.ecommerce.catalog.brand.domain.Brand;
 import com.platform.ecommerce.catalog.category.CategoryRepository;
@@ -8,6 +10,8 @@ import com.platform.ecommerce.catalog.product.domain.Product;
 import com.platform.ecommerce.catalog.product.domain.ProductImage;
 import com.platform.ecommerce.catalog.product.dto.ProductRequest;
 import com.platform.ecommerce.catalog.product.dto.ProductResponse;
+import com.platform.ecommerce.catalog.product.dto.ReviewRequest;
+import com.platform.ecommerce.catalog.product.dto.ReviewResponse;
 import com.platform.ecommerce.catalog.variant.ProductVariantRepository;
 import com.platform.ecommerce.catalog.variant.domain.ProductVariant;
 import com.platform.ecommerce.common.dto.PagedResponse;
@@ -39,22 +43,24 @@ public class ProductService {
   private final BrandRepository brandRepository;
   private final CategoryRepository categoryRepository;
   private final UserRepository userRepository;
+  private final ReviewRepository reviewRepository;
 
   public ProductService(
       ProductRepository productRepository,
       ProductImageRepository productImageRepository,
       ProductVariantRepository productVariantRepository,
+      ReviewRepository reviewRepository,
       BrandRepository brandRepository,
       CategoryRepository categoryRepository,
       UserRepository userRepository) {
     this.productRepository = productRepository;
     this.productImageRepository = productImageRepository;
     this.productVariantRepository = productVariantRepository;
+    this.reviewRepository = reviewRepository;
     this.brandRepository = brandRepository;
     this.categoryRepository = categoryRepository;
     this.userRepository = userRepository;
   }
-
   // ---- Public / customer-facing ----
 
   @Transactional(readOnly = true)
@@ -150,6 +156,46 @@ public class ProductService {
     Pageable pageable = buildPageable(page, size, sort);
     Page<Product> result = productRepository.searchAll(status, normalize(search), pageable);
     return PagedResponse.from(result.map(p -> toResponse(p, true)));
+  }
+
+  // ---- Reviews ----
+
+  @Transactional(readOnly = true)
+  public List<ReviewResponse> getReviews(Long productId) {
+    return reviewRepository.findByProduct_IdOrderByCreatedAtDesc(productId).stream()
+        .map(r -> new ReviewResponse(r.getId(), r.getRating(), r.getComment(), r.getReviewerName(), r.getCreatedAt()))
+        .toList();
+  }
+
+  @Transactional
+  public ReviewResponse addReview(Long productId, String reviewerName, String reviewerEmail, ReviewRequest request) {
+    Product product = productRepository.findById(productId)
+        .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
+
+    Review review = new Review();
+    review.setProduct(product);
+    review.setRating(request.rating());
+    review.setComment(request.comment());
+    review.setReviewerName(reviewerName);
+    review.setReviewerEmail(reviewerEmail);
+    reviewRepository.save(review);
+
+    recalculateRatingSummary(product);
+
+    return new ReviewResponse(review.getId(), review.getRating(), review.getComment(), review.getReviewerName(),
+        review.getCreatedAt());
+  }
+
+  private void recalculateRatingSummary(Product product) {
+    List<Review> allReviews = reviewRepository.findByProduct_IdOrderByCreatedAtDesc(product.getId());
+    int count = allReviews.size();
+    BigDecimal average = count == 0
+        ? BigDecimal.ZERO
+        : BigDecimal.valueOf(allReviews.stream().mapToInt(Review::getRating).average().orElse(0))
+            .setScale(2, RoundingMode.HALF_UP);
+    product.setReviewCount(count);
+    product.setAverageRating(average);
+    productRepository.save(product);
   }
 
   // ---- Helpers ----

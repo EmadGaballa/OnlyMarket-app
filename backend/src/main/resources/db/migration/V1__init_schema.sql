@@ -212,11 +212,11 @@ CREATE TABLE wishlists (
 );
 
 CREATE TABLE wishlist_items (
-    id                  BIGSERIAL PRIMARY KEY,
-    wishlist_id         BIGINT NOT NULL REFERENCES wishlists(id) ON DELETE CASCADE,
-    product_variant_id  BIGINT NOT NULL REFERENCES product_variants(id) ON DELETE CASCADE,
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (wishlist_id, product_variant_id)
+    id              BIGSERIAL PRIMARY KEY,
+    wishlist_id     BIGINT NOT NULL REFERENCES wishlists(id) ON DELETE CASCADE,
+    product_id      BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (wishlist_id, product_id)
 );
 
 CREATE TABLE favorites (
@@ -325,11 +325,13 @@ CREATE INDEX idx_coupons_seller_id ON coupons(seller_id);
 CREATE TABLE reviews (
     id              BIGSERIAL PRIMARY KEY,
     product_id      BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    user_id         BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id         BIGINT REFERENCES users(id) ON DELETE SET NULL,
     order_item_id   BIGINT REFERENCES order_items(id) ON DELETE SET NULL,
     rating          INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
     title           VARCHAR(200),
-    body            TEXT NOT NULL,
+    comment         TEXT NOT NULL,
+    reviewer_name   VARCHAR(255),
+    reviewer_email  VARCHAR(255) NOT NULL,
     is_seed_data    BOOLEAN NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),

@@ -2,7 +2,9 @@ import React from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { productsApi } from "../api/products";
+import { RatingStars } from "../components/RatingStars";
 import type { Product, Category, Brand } from "../types/catalog";
+
 import styles from "./ProductsPage.module.css";
 
 /* -------------------------------------------------------------------------- */
@@ -413,10 +415,13 @@ function ProductCard({ product }: { product: Product }) {
           </h3>
 
           {/* Ratings Snippet */}
+
           <div className={styles.ratingRow}>
-            <span className={styles.stars}>★★★★☆</span>
-            <span className={styles.ratingValue}>4.5</span>
-            <span className={styles.ratingCount}>(142)</span>
+            <RatingStars
+              rating={product.averageRating ?? 0}
+              reviewCount={product.reviewCount ?? 0}
+              size={14}
+            />
           </div>
 
           {/* Pricing */}

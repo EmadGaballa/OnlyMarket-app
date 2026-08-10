@@ -4,6 +4,7 @@ import com.platform.ecommerce.catalog.brand.BrandRepository;
 import com.platform.ecommerce.catalog.brand.domain.Brand;
 import com.platform.ecommerce.catalog.category.CategoryRepository;
 import com.platform.ecommerce.catalog.category.domain.Category;
+import com.platform.ecommerce.catalog.product.domain.Review;
 import com.platform.ecommerce.catalog.product.domain.Product;
 import com.platform.ecommerce.catalog.product.domain.ProductImage;
 import com.platform.ecommerce.catalog.variant.ProductVariantRepository;
@@ -42,6 +43,7 @@ public class ProductImportService {
   private final BrandRepository brandRepository;
   private final CategoryRepository categoryRepository;
   private final UserRepository userRepository;
+  private final ReviewRepository reviewRepository;
   private final StorageService storageService;
   private final RedisTemplate<String, Object> redisTemplate;
   private final ObjectMapper objectMapper;
@@ -53,6 +55,7 @@ public class ProductImportService {
       ProductRepository productRepository,
       ProductImageRepository productImageRepository,
       ProductVariantRepository productVariantRepository,
+      ReviewRepository reviewRepository,
       BrandRepository brandRepository,
       CategoryRepository categoryRepository,
       UserRepository userRepository,
@@ -62,6 +65,7 @@ public class ProductImportService {
     this.productRepository = productRepository;
     this.productImageRepository = productImageRepository;
     this.productVariantRepository = productVariantRepository;
+    this.reviewRepository = reviewRepository;
     this.brandRepository = brandRepository;
     this.categoryRepository = categoryRepository;
     this.userRepository = userRepository;
@@ -137,8 +141,6 @@ public class ProductImportService {
     product.setSku("DJ-" + externalId);
     product.setStatus(Product.Status.PUBLISHED);
     product.setExternalId(externalId);
-    product.setAverageRating(new BigDecimal(node.path("rating").asText("0")));
-    product.setReviewCount(node.path("stock").isInt() ? node.path("stock").asInt() : 0);
 
     // Save product and hold reference
     Product savedProduct = productRepository.save(product);
@@ -181,6 +183,31 @@ public class ProductImportService {
       pi.setDisplayOrder(displayOrder++);
       productImageRepository.save(pi);
     }
+
+    // Reviews — DummyJSON embeds these directly on the product; split them
+    // into their own rows so the reviews table isn't empty after import.
+    if (node.has("reviews") && node.path("reviews").isArray()) {
+      for (JsonNode reviewNode : node.path("reviews")) {
+        Review review = new Review();
+        review.setProduct(savedProduct);
+        review.setRating(reviewNode.path("rating").asInt(0));
+        review.setComment(reviewNode.path("comment").asText(null));
+        review.setReviewerName(reviewNode.path("reviewerName").asText(null));
+        review.setReviewerEmail(reviewNode.path("reviewerEmail").asText(null));
+        reviewRepository.save(review);
+      }
+    }
+
+    List<Review> savedReviews = reviewRepository.findByProduct_IdOrderByCreatedAtDesc(savedProduct.getId());
+    int reviewCount = savedReviews.size();
+    BigDecimal averageRating = reviewCount == 0
+        ? BigDecimal.ZERO
+        : BigDecimal.valueOf(savedReviews.stream().mapToInt(Review::getRating).average().orElse(0))
+            .setScale(2, java.math.RoundingMode.HALF_UP);
+    savedProduct.setReviewCount(reviewCount);
+    savedProduct.setAverageRating(averageRating);
+    productRepository.save(savedProduct);
+
   }
 
   public String getStatus(String jobId) {

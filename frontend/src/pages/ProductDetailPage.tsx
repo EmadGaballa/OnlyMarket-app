@@ -1,19 +1,31 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { productsApi } from '../api/products';
-import { useQuery } from '@tanstack/react-query';
-import styles from './ProductDetailPage.module.css';
+import { useState, useEffect, SyntheticEvent } from "react";
+import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { productsApi } from "../api/products";
+import { RatingStars } from "../components/RatingStars";
+import { ProductReviews } from "../components/ProductReviews";
+import styles from "./ProductDetailPage.module.css";
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
 
-  const { data: product, isLoading, error } = useQuery({
-    queryKey: ['product', slug],
+  const {
+    data: product,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["product", slug],
     queryFn: () => productsApi.getBySlug(slug!),
     enabled: !!slug,
   });
+
+  // Reset image selection and quantity when switching products
+  useEffect(() => {
+    setSelectedImageIndex(0);
+    setQuantity(1);
+  }, [slug, product?.id]);
 
   if (isLoading) {
     return (
@@ -31,8 +43,12 @@ export default function ProductDetailPage() {
       <div className={styles.page}>
         <div className={styles.errorContainer}>
           <h2>Product Not Found</h2>
-          <p>The product you are looking for does not exist or has been removed.</p>
-          <Link to="/" className={styles.backButton}>Back to Shop</Link>
+          <p>
+            The product you are looking for does not exist or has been removed.
+          </p>
+          <Link to="/" className={styles.backButton}>
+            Back to Shop
+          </Link>
         </div>
       </div>
     );
@@ -41,21 +57,18 @@ export default function ProductDetailPage() {
   const images = product.images || [];
   const currentImage = images[selectedImageIndex] || images[0];
 
-  // Helper for rendering star rating
-  const renderStars = (rating: number = 0) => {
-    const rounded = Math.round(rating);
-    return '★'.repeat(rounded) + '☆'.repeat(5 - rounded);
-  };
-
   // Safe fallback handler when an image fails to load
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 24 24" fill="none" stroke="%23ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+  const handleImageError = (e: SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.src =
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 24 24" fill="none" stroke="%23ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
   };
 
   return (
     <div className={styles.page}>
       <nav className={styles.breadcrumb}>
-        <Link to="/" className={styles.backLink}>← Back to products</Link>
+        <Link to="/" className={styles.backLink}>
+          ← Back to products
+        </Link>
       </nav>
 
       <div className={styles.productDetail}>
@@ -81,7 +94,9 @@ export default function ProductDetailPage() {
                 <button
                   key={img.id || idx}
                   type="button"
-                  className={`${styles.thumbnailButton} ${selectedImageIndex === idx ? styles.activeThumbnail : ''}`}
+                  className={`${styles.thumbnailButton} ${
+                    selectedImageIndex === idx ? styles.activeThumbnail : ""
+                  }`}
                   onClick={() => setSelectedImageIndex(idx)}
                   aria-label={`View image ${idx + 1}`}
                 >
@@ -99,21 +114,33 @@ export default function ProductDetailPage() {
         {/* Product Details & Purchase Section */}
         <div className={styles.productDetailInfo}>
           <div className={styles.badges}>
-            {product.brandName && <span className={styles.brandBadge}>{product.brandName}</span>}
-            {product.categoryName && <span className={styles.categoryBadge}>{product.categoryName}</span>}
+            {product.brandName && (
+              <span className={styles.brandBadge}>{product.brandName}</span>
+            )}
+            {product.categoryName && (
+              <span className={styles.categoryBadge}>
+                {product.categoryName}
+              </span>
+            )}
           </div>
 
           <h1 className={styles.title}>{product.name}</h1>
 
           <div className={styles.ratingRow}>
-            <span className={styles.stars}>{renderStars(product.averageRating)}</span>
+            <RatingStars
+              rating={product.averageRating ?? 0}
+              showCount={false}
+              size={16}
+            />
             <span className={styles.ratingText}>
-              {product.averageRating ? product.averageRating.toFixed(1) : '0.0'} ({product.reviewCount ?? 0} reviews)
+              ({product.reviewCount ?? 0} reviews)
             </span>
           </div>
 
           <div className={styles.priceContainer}>
-            <span className={styles.price}>${product.basePrice.toFixed(2)}</span>
+            <span className={styles.price}>
+              ${product.basePrice.toFixed(2)}
+            </span>
           </div>
 
           <p className={styles.description}>{product.description}</p>
@@ -145,7 +172,6 @@ export default function ProductDetailPage() {
               type="button"
               className={styles.addToCartButton}
               onClick={() => {
-                // Implement cart integration
                 alert(`Added ${quantity} x ${product.name} to cart!`);
               }}
             >
@@ -154,6 +180,13 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Product Reviews Section */}
+      <ProductReviews
+        productId={product.id}
+        averageRating={product.averageRating ?? 0}
+        reviewCount={product.reviewCount ?? 0}
+      />
     </div>
   );
 }

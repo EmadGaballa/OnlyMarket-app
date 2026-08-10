@@ -1,5 +1,7 @@
 package com.platform.ecommerce.catalog.product;
 
+import com.platform.ecommerce.catalog.product.dto.ReviewRequest;
+import com.platform.ecommerce.catalog.product.dto.ReviewResponse;
 import com.platform.ecommerce.catalog.product.domain.Product;
 import com.platform.ecommerce.catalog.product.dto.ProductRequest;
 import com.platform.ecommerce.catalog.product.dto.ProductResponse;
@@ -9,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -61,6 +64,33 @@ public class ProductController {
   @Operation(summary = "Get product by slug")
   public ResponseEntity<ProductResponse> getBySlug(@PathVariable String slug) {
     return ResponseEntity.ok(productService.getBySlug(slug));
+  }
+
+  // =========================================================================
+  // REVIEWS ENDPOINT (Serves review comments and ratings to the frontend)
+  // =========================================================================
+
+  @GetMapping("/{productId}/reviews")
+  @Operation(summary = "Get reviews for a product", description = "Public endpoint to retrieve reviews for a specific product ID.")
+  public ResponseEntity<List<ReviewResponse>> getProductReviews(@PathVariable Long productId) {
+    return ResponseEntity.ok(productService.getReviews(productId));
+  }
+
+  @PostMapping("/{productId}/reviews")
+  @Operation(summary = "Submit a review for a product")
+  public ResponseEntity<ReviewResponse> submitReview(
+      @PathVariable Long productId,
+      @Valid @RequestBody ReviewRequest request,
+      Authentication authentication) {
+    if (authentication == null || authentication.getName() == null) {
+      throw new IllegalStateException("User authentication principal is missing or invalid");
+    }
+    String email = authentication.getName();
+    return ResponseEntity.ok(productService.addReview(productId, resolveDisplayName(email), email, request));
+  }
+
+  private String resolveDisplayName(String email) {
+    return email.substring(0, email.indexOf('@'));
   }
 
   @PostMapping
