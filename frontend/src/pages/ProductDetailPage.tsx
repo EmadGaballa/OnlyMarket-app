@@ -1,4 +1,6 @@
 import { useState, useEffect, SyntheticEvent } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { cartApi } from "../api/cart";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { productsApi } from "../api/products";
@@ -10,6 +12,11 @@ export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(
+    null,
+  );
+
+  const queryClient = useQueryClient();
 
   const {
     data: product,
@@ -22,11 +29,42 @@ export default function ProductDetailPage() {
     enabled: !!slug,
   });
 
-  // Reset image selection and quantity when switching products
+  const addToCartMutation = useMutation({
+    mutationFn: ({ variantId, qty }: { variantId: number; qty: number }) =>
+      cartApi.addItem(variantId, qty),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+    onError: (err: Error) => {
+      console.error("Failed to add to cart:", err);
+    },
+  });
+
+  // Resolve target variant ID across potential product schema shapes
+  const targetVariantId =
+    selectedVariantId ??
+    product?.variants?.[0]?.id ??
+    (product as any)?.productVariants?.[0]?.id ??
+    (product as any)?.defaultVariantId ??
+    product?.id;
+
+  // Reset states and update variant ID whenever the product changes
   useEffect(() => {
     setSelectedImageIndex(0);
     setQuantity(1);
-  }, [slug, product?.id]);
+
+    if (product) {
+      const vId =
+        product.variants?.[0]?.id ??
+        (product as any)?.productVariants?.[0]?.id ??
+        (product as any)?.defaultVariantId ??
+        product.id;
+
+      if (vId != null) {
+        setSelectedVariantId(Number(vId));
+      }
+    }
+  }, [slug, product]);
 
   if (isLoading) {
     return (
@@ -58,7 +96,6 @@ export default function ProductDetailPage() {
   const images = product.images || [];
   const currentImage = images[selectedImageIndex] || images[0];
 
-  // Safe fallback handler when an image fails to load
   const handleImageError = (e: SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src =
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 24 24" fill="none" stroke="%23ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
@@ -172,11 +209,16 @@ export default function ProductDetailPage() {
             <button
               type="button"
               className={styles.addToCartButton}
+              disabled={targetVariantId == null || addToCartMutation.isPending}
               onClick={() => {
-                alert(`Added ${quantity} x ${product.name} to cart!`);
+                if (targetVariantId == null) return;
+                addToCartMutation.mutate({
+                  variantId: Number(targetVariantId),
+                  qty: quantity,
+                });
               }}
             >
-              Add to Cart
+              {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
             </button>
           </div>
         </div>

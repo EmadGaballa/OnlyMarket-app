@@ -3,7 +3,7 @@ spring:
     name: ecommerce-backend
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
-  
+
   # File Upload Limits
   servlet:
     multipart:
@@ -12,6 +12,7 @@ spring:
 
   # Hibernate Batch Fetching Optimization (Fixes N+1 for collections)
   jpa:
+    open-in-view: true
     properties:
       hibernate:
         default_batch_fetch_size: 20

@@ -1,5 +1,6 @@
 package com.platform.ecommerce.cart;
 
+import com.platform.ecommerce.catalog.variant.ProductVariantRepository;
 import com.platform.ecommerce.cart.domain.Cart;
 import com.platform.ecommerce.cart.domain.CartItem;
 import com.platform.ecommerce.catalog.variant.domain.ProductVariant;
@@ -18,13 +19,19 @@ public class CartService {
   private final CartItemRepository cartItemRepository;
   private final UserRepository userRepository;
 
-  public CartService(CartRepository cartRepository, CartItemRepository cartItemRepository, UserRepository userRepository) {
+  private final ProductVariantRepository productVariantRepository;
+
+  public CartService(CartRepository cartRepository, CartItemRepository cartItemRepository,
+      UserRepository userRepository, ProductVariantRepository productVariantRepository) {
     this.cartRepository = cartRepository;
     this.cartItemRepository = cartItemRepository;
     this.userRepository = userRepository;
+    this.productVariantRepository = productVariantRepository;
   }
 
-  @Transactional(readOnly = true)
+  // FIX 1: Removed readOnly = true because save() may be called when creating a
+  // cart
+  @Transactional
   public Cart getOrCreateCart(Long userId) {
     return cartRepository.findByUserId(userId)
         .orElseGet(() -> {
@@ -46,8 +53,8 @@ public class CartService {
   @Transactional
   public CartItem addItem(Long userId, Long productVariantId, int quantity) {
     Cart cart = getOrCreateCart(userId);
-    ProductVariant variant = new ProductVariant();
-    variant.setId(productVariantId);
+    ProductVariant variant = productVariantRepository.findById(productVariantId)
+        .orElseThrow(() -> new ResourceNotFoundException("ProductVariant", productVariantId));
 
     return cartItemRepository.findByCartIdAndProductVariantId(cart.getId(), productVariantId)
         .map(existing -> {
@@ -86,7 +93,9 @@ public class CartService {
     cartItemRepository.delete(item);
   }
 
-  @Transactional(readOnly = true)
+  // FIX 2: Removed readOnly = true because listItems calls getOrCreateCart(),
+  // which can execute an INSERT query.
+  @Transactional
   public List<CartItem> listItems(Long userId) {
     Cart cart = getOrCreateCart(userId);
     return cartItemRepository.findByCartId(cart.getId());

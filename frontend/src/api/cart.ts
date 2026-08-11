@@ -23,10 +23,9 @@ export const cartApi = {
     productVariantId: number,
     quantity: number,
   ): Promise<CartItem> => {
-    const res = await api.post<CartItem>("/cart/items", {
-      productVariantId,
-      quantity,
-    });
+    const res = await api.post<CartItem>(
+      `/cart/items?productVariantId=${productVariantId}&quantity=${quantity}`,
+    );
     return extractData<CartItem>(res);
   },
 

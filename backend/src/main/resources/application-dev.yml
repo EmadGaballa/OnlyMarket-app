@@ -9,7 +9,7 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
 
   jpa:
-    open-in-view: false
+    open-in-view: true
     show-sql: false # Prevents duplicate console prints
     hibernate:
       ddl-auto: validate

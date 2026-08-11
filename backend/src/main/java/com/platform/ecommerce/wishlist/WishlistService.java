@@ -18,22 +18,30 @@ public class WishlistService {
   private final WishlistItemRepository wishlistItemRepository;
   private final UserRepository userRepository;
 
-  public WishlistService(WishlistRepository wishlistRepository, WishlistItemRepository wishlistItemRepository, UserRepository userRepository) {
+  public WishlistService(
+      WishlistRepository wishlistRepository,
+      WishlistItemRepository wishlistItemRepository,
+      UserRepository userRepository) {
     this.wishlistRepository = wishlistRepository;
     this.wishlistItemRepository = wishlistItemRepository;
     this.userRepository = userRepository;
   }
 
-  @Transactional(readOnly = true)
+  // FIX: Removed readOnly = true because save() inserts a new wishlist if missing
+  @Transactional
   public Wishlist getOrCreateWishlist(Long userId) {
-    return wishlistRepository.findByUserId(userId)
-        .orElseGet(() -> {
-          User user = userRepository.findById(userId)
-              .orElseThrow(() -> new ResourceNotFoundException("User", userId));
-          Wishlist wishlist = new Wishlist();
-          wishlist.setUser(user);
-          return wishlistRepository.save(wishlist);
-        });
+    return wishlistRepository
+        .findByUserId(userId)
+        .orElseGet(
+            () -> {
+              User user =
+                  userRepository
+                      .findById(userId)
+                      .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+              Wishlist wishlist = new Wishlist();
+              wishlist.setUser(user);
+              return wishlistRepository.save(wishlist);
+            });
   }
 
   @Transactional
@@ -42,23 +50,27 @@ public class WishlistService {
     Product product = new Product();
     product.setId(productId);
 
-    return wishlistItemRepository.findByWishlistIdAndProductId(wishlist.getId(), productId)
-        .orElseGet(() -> {
-          WishlistItem item = new WishlistItem();
-          item.setWishlist(wishlist);
-          item.setProduct(product);
-          return wishlistItemRepository.save(item);
-        });
+    return wishlistItemRepository
+        .findByWishlistIdAndProductId(wishlist.getId(), productId)
+        .orElseGet(
+            () -> {
+              WishlistItem item = new WishlistItem();
+              item.setWishlist(wishlist);
+              item.setProduct(product);
+              return wishlistItemRepository.save(item);
+            });
   }
 
   @Transactional
   public void removeItem(Long userId, Long productId) {
     Wishlist wishlist = getOrCreateWishlist(userId);
-    wishlistItemRepository.findByWishlistIdAndProductId(wishlist.getId(), productId)
+    wishlistItemRepository
+        .findByWishlistIdAndProductId(wishlist.getId(), productId)
         .ifPresent(wishlistItemRepository::delete);
   }
 
-  @Transactional(readOnly = true)
+  // FIX: Removed readOnly = true because listItems calls getOrCreateWishlist()
+  @Transactional
   public List<WishlistItem> listItems(Long userId) {
     Wishlist wishlist = getOrCreateWishlist(userId);
     return wishlistItemRepository.findByWishlistId(wishlist.getId());
@@ -66,7 +78,8 @@ public class WishlistService {
 
   @Transactional(readOnly = true)
   public Long resolveUserIdByEmail(String email) {
-    return userRepository.findByEmail(email)
+    return userRepository
+        .findByEmail(email)
         .orElseThrow(() -> new ResourceNotFoundException("User with email " + email))
         .getId();
   }

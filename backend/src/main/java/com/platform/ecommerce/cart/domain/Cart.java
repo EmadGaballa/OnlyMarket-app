@@ -1,5 +1,6 @@
 package com.platform.ecommerce.cart.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.platform.ecommerce.user.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -30,6 +31,7 @@ public class Cart {
 
   @OneToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "user_id", nullable = false, unique = true)
+  @JsonIgnore
   private User user;
 
   @UpdateTimestamp
