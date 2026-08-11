@@ -61,10 +61,11 @@ export interface Cart {
  */
 export interface WishlistItem {
   id: number;
-  wishlistId: number;
   productId: number;
-  product: CartProductSummary;
-  addedAt?: string;
+  productName: string;
+  productSlug: string;
+  imageUrl: string | null;
+  basePrice: number;
 }
 
 /**

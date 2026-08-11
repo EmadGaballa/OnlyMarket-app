@@ -5,7 +5,6 @@ export const wishlistApi = {
   list: async (): Promise<WishlistItem[]> => {
     const response = await api.get<WishlistItem[]>("/wishlist");
 
-    // Handle both direct arrays and wrapped responses safely
     if (Array.isArray(response)) {
       return response;
     }
@@ -22,7 +21,7 @@ export const wishlistApi = {
   },
 
   addItem: (productId: number) =>
-    api.post<WishlistItem>("/wishlist/items", { productId }),
+    api.post<WishlistItem>(`/wishlist/items?productId=${productId}`),
 
   removeItem: (productId: number) =>
     api.delete<void>(`/wishlist/items/${productId}`),

@@ -6,6 +6,11 @@ import { RatingStars } from "../components/RatingStars";
 import AddToCartButton from "../components/AddToCartButton";
 import { formatVariantName, resolveDefaultVariantId } from "../utils/product";
 import type { Product, Category, Brand } from "../types/catalog";
+import {
+  useWishlist,
+  useAddToWishlist,
+  useRemoveFromWishlist,
+} from "../hooks/useWishlist";
 
 import styles from "./ProductsPage.module.css";
 
@@ -384,9 +389,19 @@ function ProductCard({ product }: { product: Product }) {
   const originalPrice = product.basePrice * 1.2;
   const discountPercent = 20;
 
+  const { data: wishlist } = useWishlist();
+  const addToWishlist = useAddToWishlist();
+  const removeFromWishlist = useRemoveFromWishlist();
+  const isWishlisted = wishlist?.some((item) => item.productId === product.id);
+
   const handleWishlistClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isWishlisted) {
+      removeFromWishlist.mutate(product.id);
+    } else {
+      addToWishlist.mutate(product.id);
+    }
   };
 
   return (
@@ -398,10 +413,10 @@ function ProductCard({ product }: { product: Product }) {
           <button
             type="button"
             className={styles.wishlistBtn}
-            title="Add to Wishlist"
+            title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
             onClick={handleWishlistClick}
           >
-            ♡
+            {isWishlisted ? "♥" : "♡"}
           </button>
         </div>
 

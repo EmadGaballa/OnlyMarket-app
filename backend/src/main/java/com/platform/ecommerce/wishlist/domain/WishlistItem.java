@@ -1,7 +1,6 @@
 package com.platform.ecommerce.wishlist.domain;
 
 import com.platform.ecommerce.catalog.product.domain.Product;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;

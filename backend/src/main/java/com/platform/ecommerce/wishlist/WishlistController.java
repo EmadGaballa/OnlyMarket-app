@@ -1,6 +1,7 @@
 package com.platform.ecommerce.wishlist;
 
 import com.platform.ecommerce.wishlist.domain.WishlistItem;
+import com.platform.ecommerce.wishlist.dto.WishlistItemResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -30,14 +31,14 @@ public class WishlistController {
 
   @GetMapping
   @Operation(summary = "Get current user's wishlist items")
-  public ResponseEntity<List<WishlistItem>> getWishlist(Authentication authentication) {
+  public ResponseEntity<List<WishlistItemResponse>> getWishlist(Authentication authentication) {
     Long userId = currentUserId(authentication);
     return ResponseEntity.ok(wishlistService.listItems(userId));
   }
 
   @PostMapping("/items")
   @Operation(summary = "Add product to wishlist")
-  public ResponseEntity<WishlistItem> addItem(
+  public ResponseEntity<WishlistItemResponse> addItem(
       Authentication authentication,
       @RequestParam Long productId) {
     Long userId = currentUserId(authentication);

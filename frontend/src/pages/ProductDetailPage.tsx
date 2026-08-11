@@ -6,6 +6,11 @@ import { RatingStars } from "../components/RatingStars";
 import { ProductReviews } from "../components/ProductReviews";
 import AddToCartButton from "../components/AddToCartButton";
 import { useCart } from "../hooks/useCart";
+import {
+  useWishlist,
+  useAddToWishlist,
+  useRemoveFromWishlist,
+} from "../hooks/useWishlist";
 import { formatVariantName, resolveDefaultVariantId } from "../utils/product";
 import styles from "./ProductDetailPage.module.css";
 
@@ -43,6 +48,20 @@ export default function ProductDetailPage() {
   const cartItem = cart?.items?.find(
     (item) => item.productVariantId === targetVariantId,
   );
+
+  const { data: wishlist } = useWishlist();
+  const addToWishlist = useAddToWishlist();
+  const removeFromWishlist = useRemoveFromWishlist();
+  const isWishlisted = wishlist?.some((item) => item.productId === product?.id);
+
+  const handleWishlistClick = () => {
+    if (!product) return;
+    if (isWishlisted) {
+      removeFromWishlist.mutate(product.id);
+    } else {
+      addToWishlist.mutate(product.id);
+    }
+  };
 
   // Reset states and update variant ID whenever the product changes
   useEffect(() => {
@@ -154,7 +173,35 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          <h1 className={styles.title}>{product.name}</h1>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <h1 className={styles.title}>{product.name}</h1>
+            <button
+              type="button"
+              onClick={handleWishlistClick}
+              title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+              aria-label={
+                isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"
+              }
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "28px",
+                lineHeight: 1,
+                color: isWishlisted ? "#e11d48" : "#999",
+                flexShrink: 0,
+              }}
+            >
+              {isWishlisted ? "♥" : "♡"}
+            </button>
+          </div>
 
           <div className={styles.ratingRow}>
             <RatingStars

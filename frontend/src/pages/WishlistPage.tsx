@@ -96,13 +96,12 @@ export default function WishlistPage() {
 
               return (
                 <article key={item.id} className={styles.productCard}>
-                  {/* Remove Button Overlay */}
                   <button
                     type="button"
                     className={styles.removeBadgeBtn}
                     onClick={() => removeMutation.mutate(item.productId)}
                     disabled={isRemoving}
-                    aria-label={`Remove ${item.product?.name ?? "item"} from wishlist`}
+                    aria-label={`Remove ${item.productName} from wishlist`}
                     title="Remove item"
                   >
                     {isRemoving ? (
@@ -113,14 +112,14 @@ export default function WishlistPage() {
                   </button>
 
                   <Link
-                    to={`/products/${item.product?.slug ?? ""}`}
+                    to={`/products/${item.productSlug}`}
                     className={styles.imageLink}
                   >
                     <div className={styles.imageWrapper}>
-                      {item.product?.images?.[0]?.url ? (
+                      {item.imageUrl ? (
                         <img
-                          src={item.product.images[0].url}
-                          alt={item.product.name}
+                          src={item.imageUrl}
+                          alt={item.productName}
                           loading="lazy"
                         />
                       ) : (
@@ -134,21 +133,19 @@ export default function WishlistPage() {
 
                   <div className={styles.productDetails}>
                     <Link
-                      to={`/products/${item.product?.slug ?? ""}`}
+                      to={`/products/${item.productSlug}`}
                       className={styles.titleLink}
                     >
-                      <h3 className={styles.productName}>
-                        {item.product?.name ?? "Product"}
-                      </h3>
+                      <h3 className={styles.productName}>{item.productName}</h3>
                     </Link>
 
                     <p className={styles.price}>
-                      {formatPrice(item.product?.basePrice ?? 0)}
+                      {formatPrice(item.basePrice)}
                     </p>
 
                     <div className={styles.actionsRow}>
                       <Link
-                        to={`/products/${item.product?.slug ?? ""}`}
+                        to={`/products/${item.productSlug}`}
                         className={styles.viewBtn}
                       >
                         View Details
