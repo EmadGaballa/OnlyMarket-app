@@ -3,6 +3,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { productsApi } from "../api/products";
 import { RatingStars } from "../components/RatingStars";
+import AddToCartButton from "../components/AddToCartButton";
+import { formatVariantName, resolveDefaultVariantId } from "../utils/product";
 import type { Product, Category, Brand } from "../types/catalog";
 
 import styles from "./ProductsPage.module.css";
@@ -371,6 +373,14 @@ export default function ProductsPage() {
 function ProductCard({ product }: { product: Product }) {
   const mainImage = product.images?.[0]?.url || "/placeholder-product.png";
 
+  const defaultVariant = product.variants?.[0];
+  const defaultVariantId = resolveDefaultVariantId(product);
+  const unitPrice = defaultVariant?.effectivePrice ?? product.basePrice;
+  const variantName = defaultVariant
+    ? formatVariantName(defaultVariant.attributesJson)
+    : null;
+  const maxAvailableQuantity = defaultVariant?.stockQuantity;
+
   const originalPrice = product.basePrice * 1.2;
   const discountPercent = 20;
 
@@ -447,13 +457,20 @@ function ProductCard({ product }: { product: Product }) {
 
       {/* Quick Add Button */}
       <div className={styles.cardFooter}>
-        <button
-          type="button"
-          className={styles.addToCartBtn}
-          onClick={() => alert(`Added ${product.name} to cart!`)}
-        >
-          Add To Cart
-        </button>
+        <AddToCartButton
+          size="compact"
+          productVariantId={defaultVariantId}
+          quantity={1}
+          productId={product.id}
+          productName={product.name}
+          productSlug={product.slug}
+          imageUrl={mainImage}
+          sku={defaultVariant?.sku}
+          variantName={variantName}
+          unitPrice={unitPrice}
+          maxAvailableQuantity={maxAvailableQuantity}
+          showStockHint
+        />
       </div>
     </div>
   );

@@ -1,9 +1,12 @@
 package com.platform.ecommerce.cart;
 
-import com.platform.ecommerce.cart.domain.CartItem;
+import com.platform.ecommerce.cart.dto.AddCartItemRequest;
+import com.platform.ecommerce.cart.dto.CartItemResponse;
+import com.platform.ecommerce.cart.dto.CartResponse;
+import com.platform.ecommerce.cart.dto.UpdateCartItemRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.List;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,11 +16,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Cart endpoints. All operations are scoped to the authenticated user.
+ *
+ * <p>Only DTOs are exchanged — never raw JPA entities. POST/PUT accept JSON
+ * request bodies per REST conventions.
  */
 @RestController
 @RequestMapping("/api/v1/cart")
@@ -31,30 +36,28 @@ public class CartController {
   }
 
   @GetMapping
-  @Operation(summary = "Get current user's cart items")
-  public ResponseEntity<List<CartItem>> getCart(Authentication authentication) {
-    Long userId = currentUserId(authentication);
-    return ResponseEntity.ok(cartService.listItems(userId));
+  @Operation(summary = "Get current user's cart")
+  public ResponseEntity<CartResponse> getCart(Authentication authentication) {
+    return ResponseEntity.ok(cartService.listItems(currentUserId(authentication)));
   }
 
   @PostMapping("/items")
   @Operation(summary = "Add item to cart")
-  public ResponseEntity<CartItem> addItem(
+  public ResponseEntity<CartItemResponse> addItem(
       Authentication authentication,
-      @RequestParam Long productVariantId,
-      @RequestParam(defaultValue = "1") int quantity) {
-    Long userId = currentUserId(authentication);
-    return ResponseEntity.ok(cartService.addItem(userId, productVariantId, quantity));
+      @Valid @RequestBody AddCartItemRequest request) {
+    return ResponseEntity.ok(cartService.addItem(
+        currentUserId(authentication), request.productVariantId(), request.quantity()));
   }
 
   @PutMapping("/items/{cartItemId}")
   @Operation(summary = "Update cart item quantity")
-  public ResponseEntity<CartItem> updateItem(
+  public ResponseEntity<CartItemResponse> updateItem(
       Authentication authentication,
       @PathVariable Long cartItemId,
-      @RequestParam int quantity) {
-    Long userId = currentUserId(authentication);
-    return ResponseEntity.ok(cartService.updateQuantity(userId, cartItemId, quantity));
+      @Valid @RequestBody UpdateCartItemRequest request) {
+    return ResponseEntity.ok(cartService.updateQuantity(
+        currentUserId(authentication), cartItemId, request.quantity()));
   }
 
   @DeleteMapping("/items/{cartItemId}")

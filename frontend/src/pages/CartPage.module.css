@@ -301,6 +301,14 @@
   border-radius: 4px;
 }
 
+/* Stock / availability warning */
+.stockWarning {
+  align-self: flex-start;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-warning, #f59e0b);
+}
+
 /* Item Footer Controls & Price */
 .itemFooter {
   display: flex;

@@ -1,0 +1,122 @@
+/* Toast notification stack — fixed top-right, above everything. */
+.toastStack {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md, 12px);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg, 0 20px 30px -10px rgba(0, 0, 0, 0.85));
+  animation: toastIn 220ms var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+}
+
+.toastSuccess {
+  border-left: 4px solid var(--color-success, #10b981);
+}
+
+.toastError {
+  border-left: 4px solid var(--color-error, #ef4444);
+}
+
+.thumbnail {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm, 8px);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--color-surface-raised, #f1f5f9);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.message {
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.actionLink {
+  align-self: flex-start;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-primary, #2563eb);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color var(--transition-fast, 0.15s ease);
+}
+
+.actionLink:hover {
+  color: var(--color-primary-hover, #1d4ed8);
+}
+
+.closeBtn {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted, #94a3b8);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+  transition:
+    background-color var(--transition-fast, 0.15s ease),
+    color var(--transition-fast, 0.15s ease);
+}
+
+.closeBtn:hover {
+  background: var(--color-surface-raised, #f1f5f9);
+  color: var(--color-text);
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}

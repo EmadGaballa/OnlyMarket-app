@@ -1,45 +1,21 @@
 import type { SVGProps } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { cartApi } from "../api/cart";
+import {
+  useCart,
+  useClearCart,
+  useRemoveCartItem,
+  useUpdateCartItem,
+} from "../hooks/useCart";
 import styles from "./CartPage.module.css";
 
 export default function CartPage() {
-  const queryClient = useQueryClient();
+  const { data: cart, isLoading, error, refetch } = useCart();
 
-  const {
-    data: rawItems,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ["cart"],
-    queryFn: () => cartApi.list(),
-  });
+  const items = cart?.items ?? [];
 
-  // Always fallback to an empty array to prevent `.reduce` or `.map` exceptions
-  const items = Array.isArray(rawItems) ? rawItems : [];
-
-  const updateMutation = useMutation({
-    mutationFn: ({
-      cartItemId,
-      quantity,
-    }: {
-      cartItemId: number;
-      quantity: number;
-    }) => cartApi.updateItem(cartItemId, quantity),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
-  });
-
-  const removeMutation = useMutation({
-    mutationFn: (cartItemId: number) => cartApi.removeItem(cartItemId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
-  });
-
-  const clearMutation = useMutation({
-    mutationFn: () => cartApi.clear(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
-  });
+  const updateMutation = useUpdateCartItem();
+  const removeMutation = useRemoveCartItem();
+  const clearMutation = useClearCart();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -48,12 +24,21 @@ export default function CartPage() {
     }).format(price);
   };
 
-  const subtotal = items.reduce(
+  // Server-computed totals (CartResponse.subtotal / itemCount) are the source
+  // of truth. We only recompute client-side as a defensive fallback.
+  const fallbackSubtotal = items.reduce(
     (sum, item) =>
-      sum + (item.productVariant?.effectivePrice ?? 0) * (item.quantity ?? 1),
+      sum +
+      (item.lineTotal ?? (item.unitPrice ?? 0) * (item.quantity ?? 1)),
     0,
   );
-  const itemCount = items.reduce((sum, item) => sum + (item.quantity ?? 1), 0);
+  const subtotal =
+    cart && typeof cart.subtotal === "number" ? cart.subtotal : fallbackSubtotal;
+  const itemCount =
+    cart && typeof cart.itemCount === "number"
+      ? cart.itemCount
+      : items.reduce((sum, item) => sum + (item.quantity ?? 1), 0);
+
   const freeShippingThreshold = 75;
   const shippingFee =
     subtotal >= freeShippingThreshold || items.length === 0 ? 0 : 7.99;
@@ -149,62 +134,78 @@ export default function CartPage() {
 
               <div className={styles.cartList}>
                 {items.map((item) => {
-                  const product = item.productVariant?.product;
-                  const imageUrl =
-                    item.productVariant?.images?.[0]?.url ||
-                    product?.images?.[0]?.url;
-                  const itemPrice = item.productVariant?.effectivePrice ?? 0;
-                  const itemTotal = itemPrice * (item.quantity ?? 1);
-
                   const isUpdating =
                     updateMutation.isPending &&
                     updateMutation.variables?.cartItemId === item.id;
                   const isRemoving =
                     removeMutation.isPending &&
                     removeMutation.variables === item.id;
+                  const productHref = item.productSlug
+                    ? `/products/${item.productSlug}`
+                    : null;
+                  const atMax = item.quantity >= item.maxAvailableQuantity;
 
                   return (
                     <article key={item.id} className={styles.cartItem}>
-                      {/* Product Thumbnail */}
-                      <Link
-                        to={product?.slug ? `/products/${product.slug}` : "#"}
-                        className={styles.imageLink}
-                      >
-                        <div className={styles.imageWrapper}>
-                          {imageUrl ? (
-                            <img
-                              src={imageUrl}
-                              alt={product?.name || "Product"}
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className={styles.placeholder}>
-                              <ImageIcon />
-                            </div>
-                          )}
+                      {/* Product Thumbnail (links to the product detail page) */}
+                      {productHref ? (
+                        <Link to={productHref} className={styles.imageLink}>
+                          <div className={styles.imageWrapper}>
+                            {item.imageUrl ? (
+                              <img
+                                src={item.imageUrl}
+                                alt={item.productName}
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className={styles.placeholder}>
+                                <ImageIcon />
+                              </div>
+                            )}
+                          </div>
+                        </Link>
+                      ) : (
+                        <div className={styles.imageLink}>
+                          <div className={styles.imageWrapper}>
+                            {item.imageUrl ? (
+                              <img
+                                src={item.imageUrl}
+                                alt={item.productName}
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className={styles.placeholder}>
+                                <ImageIcon />
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </Link>
+                      )}
 
                       {/* Item Details */}
                       <div className={styles.itemContent}>
                         <div className={styles.itemHeader}>
-                          <Link
-                            to={
-                              product?.slug ? `/products/${product.slug}` : "#"
-                            }
-                            className={styles.productTitleLink}
-                          >
+                          {productHref ? (
+                            <Link
+                              to={productHref}
+                              className={styles.productTitleLink}
+                            >
+                              <h3 className={styles.productName}>
+                                {item.productName}
+                              </h3>
+                            </Link>
+                          ) : (
                             <h3 className={styles.productName}>
-                              {product?.name || "Unknown Product"}
+                              {item.productName}
                             </h3>
-                          </Link>
+                          )}
 
                           <button
                             type="button"
                             className={styles.removeBtn}
                             onClick={() => removeMutation.mutate(item.id)}
                             disabled={isRemoving || isUpdating}
-                            aria-label={`Remove ${product?.name ?? "item"} from cart`}
+                            aria-label={`Remove ${item.productName} from cart`}
                             title="Remove item"
                           >
                             {isRemoving ? (
@@ -215,15 +216,27 @@ export default function CartPage() {
                           </button>
                         </div>
 
-                        {item.productVariant?.name && (
+                        {item.variantName && (
                           <span className={styles.variantTag}>
-                            {item.productVariant.name}
+                            {item.variantName}
                           </span>
                         )}
 
+                        {/* Stock / availability warning */}
+                        {!item.inStock ? (
+                          <span className={styles.stockWarning}>
+                            Out of stock
+                          </span>
+                        ) : item.maxAvailableQuantity > 0 &&
+                          item.maxAvailableQuantity <= 5 ? (
+                          <span className={styles.stockWarning}>
+                            Only {item.maxAvailableQuantity} left
+                          </span>
+                        ) : null}
+
                         <div className={styles.itemFooter}>
                           <p className={styles.unitPrice}>
-                            {formatPrice(itemPrice)} each
+                            {formatPrice(item.unitPrice)} each
                           </p>
 
                           {/* Quantity Controls */}
@@ -235,7 +248,10 @@ export default function CartPage() {
                                 handleQuantityChange(item.id, item.quantity - 1)
                               }
                               disabled={
-                                item.quantity <= 1 || isUpdating || isRemoving
+                                item.quantity <= 1 ||
+                                isUpdating ||
+                                isRemoving ||
+                                !item.inStock
                               }
                               aria-label="Decrease quantity"
                             >
@@ -256,7 +272,9 @@ export default function CartPage() {
                               onClick={() =>
                                 handleQuantityChange(item.id, item.quantity + 1)
                               }
-                              disabled={isUpdating || isRemoving}
+                              disabled={
+                                isUpdating || isRemoving || !item.inStock || atMax
+                              }
                               aria-label="Increase quantity"
                             >
                               <PlusIcon />
@@ -265,7 +283,7 @@ export default function CartPage() {
 
                           {/* Line Total */}
                           <p className={styles.itemTotal}>
-                            {formatPrice(itemTotal)}
+                            {formatPrice(item.lineTotal)}
                           </p>
                         </div>
                       </div>

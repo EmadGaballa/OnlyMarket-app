@@ -26,47 +26,34 @@ export interface CartProductSummary {
 export type VariantAttributesMap = Record<string, string>;
 
 /**
- * Product variant details attached to a cart line item
- */
-export interface CartProductVariant {
-  id: number;
-  sku: string;
-  priceOverride?: number;
-  effectivePrice: number;
-  attributesJson: string; // Raw JSON string from server
-  attributes?: VariantAttributesMap; // Parsed utility object for UI rendering
-  stockQuantity?: number;
-  product: CartProductSummary;
-}
-
-/**
- * Individual line item in the shopping cart
+ * Flat, self-contained cart line item returned by the cart API
+ * (mirrors backend {@code CartItemResponse}).
  */
 export interface CartItem {
   id: number;
-  cartId: number;
   productVariantId: number;
+  productId: number;
+  productName: string;
+  productSlug: string;
+  variantName: string | null;
+  sku: string;
+  imageUrl: string | null;
+  unitPrice: number;
   quantity: number;
-  productVariant: CartProductVariant;
-  createdAt?: string;
-  updatedAt?: string;
+  lineTotal: number;
+  inStock: boolean;
+  maxAvailableQuantity: number;
 }
 
 /**
- * Complete shopping cart aggregate entity
+ * Cart aggregate returned by {@code GET /api/v1/cart} (mirrors backend
+ * {@code CartResponse}). {@code subtotal} / {@code itemCount} are the
+ * server-computed source of truth.
  */
 export interface Cart {
-  id: number;
-  userId?: number | null;
-  guestToken?: string | null;
   items: CartItem[];
-  totalItems: number; // Distinct line items
-  itemCount: number; // Sum of all quantities
   subtotal: number;
-  shippingTotal?: number;
-  discountTotal?: number;
-  grandTotal: number;
-  updatedAt?: string;
+  itemCount: number;
 }
 
 /**
@@ -113,6 +100,17 @@ export interface AddToCartInput {
 
 export interface UpdateCartItemInput {
   cartItemId: number;
+  quantity: number;
+}
+
+/** Request body for {@code POST /api/v1/cart/items}. */
+export interface AddCartItemRequest {
+  productVariantId: number;
+  quantity: number;
+}
+
+/** Request body for {@code PUT /api/v1/cart/items/{cartItemId}}. */
+export interface UpdateCartItemRequest {
   quantity: number;
 }
 

@@ -109,7 +109,7 @@ export default function ProfilePage() {
             </div>
             <div className={styles.value}>
               <span
-                className={`${styles.statusBadge} ${profile?.status === "active" ? styles.active : ""}`}
+                className={`${styles.statusBadge} ${profile?.status === "ACTIVE" ? styles.active : ""}`}
               >
                 {profile?.status || "Active"}
               </span>

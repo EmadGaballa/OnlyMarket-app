@@ -19,7 +19,12 @@ public class WebConfig implements WebMvcConfigurer {
     @Bean
     public Hibernate6Module hibernate6Module() {
         Hibernate6Module module = new Hibernate6Module();
-        // Don't try to load lazy fields during serialization — just skip them
+        // Defensive fallback only: the cart flow now serializes DTOs exclusively
+        // (see cart/dto/CartResponse), so this module is irrelevant there. It is
+        // kept because WishlistController/FavoriteController still return raw JPA
+        // entities; with FORCE_LAZY_LOADING disabled, unloaded lazy fields are
+        // skipped instead of throwing LazyInitializationException. Those
+        // controllers should be migrated to DTOs too (separate effort).
         module.disable(Hibernate6Module.Feature.FORCE_LAZY_LOADING);
         return module;
     }

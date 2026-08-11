@@ -288,7 +288,8 @@ public class ProductService {
 
     List<ProductResponse.VariantResponse> variants = p.getVariants() != null ? p.getVariants().stream()
         .map(v -> new ProductResponse.VariantResponse(
-            v.getId(), v.getSku(), v.getPriceOverride(), v.effectivePrice(), v.getAttributesJson()))
+            v.getId(), v.getSku(), v.getPriceOverride(), v.effectivePrice(),
+            v.getAttributesJson(), v.getStockQuantity()))
         .toList() : Collections.emptyList();
 
     return new ProductResponse(

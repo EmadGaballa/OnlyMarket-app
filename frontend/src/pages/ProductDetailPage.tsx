@@ -1,11 +1,12 @@
 import { useState, useEffect, SyntheticEvent } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { cartApi } from "../api/cart";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { productsApi } from "../api/products";
 import { RatingStars } from "../components/RatingStars";
 import { ProductReviews } from "../components/ProductReviews";
+import AddToCartButton from "../components/AddToCartButton";
+import { useCart } from "../hooks/useCart";
+import { formatVariantName, resolveDefaultVariantId } from "../utils/product";
 import styles from "./ProductDetailPage.module.css";
 
 export default function ProductDetailPage() {
@@ -15,8 +16,6 @@ export default function ProductDetailPage() {
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(
     null,
   );
-
-  const queryClient = useQueryClient();
 
   const {
     data: product,
@@ -29,24 +28,21 @@ export default function ProductDetailPage() {
     enabled: !!slug,
   });
 
-  const addToCartMutation = useMutation({
-    mutationFn: ({ variantId, qty }: { variantId: number; qty: number }) =>
-      cartApi.addItem(variantId, qty),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-    },
-    onError: (err: Error) => {
-      console.error("Failed to add to cart:", err);
-    },
-  });
+  // Resolve the target variant id (selected variant, else default/first)
+  const targetVariantId = selectedVariantId ?? resolveDefaultVariantId(product);
 
-  // Resolve target variant ID across potential product schema shapes
-  const targetVariantId =
-    selectedVariantId ??
-    product?.variants?.[0]?.id ??
-    (product as any)?.productVariants?.[0]?.id ??
-    (product as any)?.defaultVariantId ??
-    product?.id;
+  // Effective price / stock for the currently targeted variant
+  const selectedVariant =
+    product?.variants?.find((v) => v.id === targetVariantId) ??
+    product?.variants?.[0];
+  const unitPrice = selectedVariant?.effectivePrice ?? product?.basePrice ?? 0;
+  const stockQuantity = selectedVariant?.stockQuantity;
+  const variantAttributesJson = selectedVariant?.attributesJson;
+
+  const { data: cart } = useCart();
+  const cartItem = cart?.items?.find(
+    (item) => item.productVariantId === targetVariantId,
+  );
 
   // Reset states and update variant ID whenever the product changes
   useEffect(() => {
@@ -54,11 +50,7 @@ export default function ProductDetailPage() {
     setQuantity(1);
 
     if (product) {
-      const vId =
-        product.variants?.[0]?.id ??
-        (product as any)?.productVariants?.[0]?.id ??
-        (product as any)?.defaultVariantId ??
-        product.id;
+      const vId = resolveDefaultVariantId(product);
 
       if (vId != null) {
         setSelectedVariantId(Number(vId));
@@ -176,9 +168,14 @@ export default function ProductDetailPage() {
           </div>
 
           <div className={styles.priceContainer}>
-            <span className={styles.price}>
-              ${product.basePrice.toFixed(2)}
-            </span>
+            <span className={styles.price}>${(unitPrice ?? 0).toFixed(2)}</span>
+            {stockQuantity != null && stockQuantity <= 5 && (
+              <span className={styles.stockNotice}>
+                {stockQuantity > 0
+                  ? `Only ${stockQuantity} left in stock`
+                  : "Out of stock"}
+              </span>
+            )}
           </div>
 
           <p className={styles.description}>{product.description}</p>
@@ -187,39 +184,49 @@ export default function ProductDetailPage() {
 
           {/* Add to Cart Controls */}
           <div className={styles.actions}>
-            <div className={styles.quantitySelector}>
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                disabled={quantity <= 1}
-                aria-label="Decrease quantity"
-              >
-                −
-              </button>
-              <span>{quantity}</span>
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => q + 1)}
-                aria-label="Increase quantity"
-              >
-                +
-              </button>
-            </div>
+            {!cartItem && (
+              <div className={styles.quantitySelector}>
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  disabled={quantity <= 1}
+                  aria-label="Decrease quantity"
+                >
+                  −
+                </button>
+                <span>{quantity}</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuantity((q) =>
+                      stockQuantity != null
+                        ? Math.min(q + 1, stockQuantity)
+                        : q + 1,
+                    )
+                  }
+                  disabled={stockQuantity != null && quantity >= stockQuantity}
+                  aria-label="Increase quantity"
+                >
+                  +
+                </button>
+              </div>
+            )}
 
-            <button
-              type="button"
-              className={styles.addToCartButton}
-              disabled={targetVariantId == null || addToCartMutation.isPending}
-              onClick={() => {
-                if (targetVariantId == null) return;
-                addToCartMutation.mutate({
-                  variantId: Number(targetVariantId),
-                  qty: quantity,
-                });
-              }}
-            >
-              {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
-            </button>
+            <AddToCartButton
+              productVariantId={
+                targetVariantId != null ? Number(targetVariantId) : undefined
+              }
+              quantity={quantity}
+              productId={product.id}
+              productName={product.name}
+              productSlug={product.slug}
+              imageUrl={currentImage?.url}
+              sku={selectedVariant?.sku}
+              variantName={formatVariantName(variantAttributesJson)}
+              unitPrice={unitPrice}
+              maxAvailableQuantity={stockQuantity}
+              showStockHint
+            />
           </div>
         </div>
       </div>

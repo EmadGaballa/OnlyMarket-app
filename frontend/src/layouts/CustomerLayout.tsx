@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, FormEvent, SVGProps } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  FormEvent,
+  SVGProps,
+} from "react";
 import {
   Outlet,
   Link,
@@ -9,6 +15,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { useCart } from "../hooks/useCart";
 import { productsApi } from "../api/products";
 import type { Category } from "../types/catalog";
 import styles from "./CustomerLayout.module.css";
@@ -58,6 +65,9 @@ const getBroadCategoryName = (rawName: string): string => {
 export default function CustomerLayout() {
   const { isAuthenticated, user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const userDisplayName = user
+    ? [user.firstName, user.lastName].filter(Boolean).join(" ").trim()
+    : "";
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -82,6 +92,11 @@ export default function CustomerLayout() {
     queryKey: ["categories"],
     queryFn: productsApi.listCategories,
   });
+
+  // Shared cart cache — powers the header item-count badge. Auto-gated to
+  // authenticated users inside the hook.
+  const { data: cartData } = useCart();
+  const cartItemCount = cartData?.itemCount ?? 0;
 
   // Keep search input synced with URL changes
   useEffect(() => {
@@ -240,6 +255,16 @@ export default function CustomerLayout() {
                 >
                   <div className={styles.badgeWrapper}>
                     <CartIcon />
+                    {cartItemCount > 0 && (
+                      <span
+                        className={styles.cartBadge}
+                        title={`${cartItemCount} ${
+                          cartItemCount === 1 ? "item" : "items"
+                        } in cart`}
+                      >
+                        {cartItemCount > 99 ? "99+" : cartItemCount}
+                      </span>
+                    )}
                   </div>
                   <span className={styles.mobileNavLabel}>Cart</span>
                 </Link>
@@ -256,14 +281,14 @@ export default function CustomerLayout() {
                     aria-haspopup="true"
                   >
                     <div className={styles.avatar}>
-                      {user?.name ? (
-                        user.name.charAt(0).toUpperCase()
+                      {userDisplayName ? (
+                        userDisplayName.charAt(0).toUpperCase()
                       ) : (
                         <UserIcon />
                       )}
                     </div>
                     <span className={styles.profileName}>
-                      {user?.name || "Account"}
+                      {userDisplayName || "Account"}
                     </span>
                   </button>
 
@@ -271,7 +296,7 @@ export default function CustomerLayout() {
                     <div className={styles.dropdownMenu} role="menu">
                       <div className={styles.dropdownHeader}>
                         <p className={styles.userName}>
-                          {user?.name || "User"}
+                          {userDisplayName || "User"}
                         </p>
                         <p className={styles.userEmail}>{user?.email || ""}</p>
                       </div>

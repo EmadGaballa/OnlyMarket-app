@@ -42,6 +42,10 @@ public class ProductVariant {
   @Column(name = "price_override", precision = 12, scale = 2)
   private BigDecimal priceOverride;
 
+  /** Available units for sale. {@code null} means stock is not tracked for this variant. */
+  @Column(name = "stock_quantity")
+  private Integer stockQuantity;
+
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "attributes_json", nullable = false, columnDefinition = "jsonb")
   private String attributesJson = "{}";

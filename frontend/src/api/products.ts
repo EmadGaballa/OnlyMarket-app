@@ -11,6 +11,7 @@ export const productsApi = {
     sort?: string;
     page?: number;
     size?: number;
+    express?: boolean;
   }) => {
     const query = new URLSearchParams();
     if (params?.search) query.set('search', params.search);

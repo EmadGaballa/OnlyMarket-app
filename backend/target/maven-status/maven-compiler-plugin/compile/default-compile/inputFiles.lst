@@ -14,6 +14,10 @@ C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\cart\CartService.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\cart\domain\Cart.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\cart\domain\CartItem.java
+C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\cart\dto\AddCartItemRequest.java
+C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\cart\dto\CartItemResponse.java
+C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\cart\dto\CartResponse.java
+C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\cart\dto\UpdateCartItemRequest.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\brand\BrandController.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\brand\BrandRepository.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\brand\BrandRequest.java
@@ -27,8 +31,11 @@ C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\AdminProductController.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\domain\Product.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\domain\ProductImage.java
+C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\domain\Review.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\dto\ProductRequest.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\dto\ProductResponse.java
+C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\dto\ReviewRequest.java
+C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\dto\ReviewResponse.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\ProductController.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\ProductImageRepository.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\ProductImageService.java
@@ -36,6 +43,7 @@ C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\ProductRepository.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\ProductSecurity.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\ProductService.java
+C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\product\ReviewRepository.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\variant\domain\ProductVariant.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\catalog\variant\ProductVariantRepository.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\common\dto\ApiErrorResponse.java
@@ -48,6 +56,7 @@ C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\common\exception\InsufficientStockException.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\common\exception\InvalidOrderStatusTransitionException.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\common\exception\ResourceNotFoundException.java
+C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\common\exception\StockLimitExceededException.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\common\storage\LocalStorageService.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\common\storage\StorageService.java
 C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\config\AsyncConfig.java

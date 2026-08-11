@@ -1,5 +1,10 @@
 import { api } from "./client";
-import type { CartItem } from "../types/cart";
+import type {
+  AddCartItemRequest,
+  Cart,
+  CartItem,
+  UpdateCartItemRequest,
+} from "../types/cart";
 
 /**
  * Safely extracts payload data whether the API client returns
@@ -13,19 +18,16 @@ function extractData<T>(response: unknown): T {
 }
 
 export const cartApi = {
-  list: async (): Promise<CartItem[]> => {
-    const res = await api.get<CartItem[]>("/cart");
-    const data = extractData<CartItem[]>(res);
-    return Array.isArray(data) ? data : [];
+  list: async (): Promise<Cart> => {
+    const res = await api.get<Cart>("/cart");
+    const data = extractData<Cart>(res);
+    return data && Array.isArray(data.items)
+      ? data
+      : { items: [], subtotal: 0, itemCount: 0 };
   },
 
-  addItem: async (
-    productVariantId: number,
-    quantity: number,
-  ): Promise<CartItem> => {
-    const res = await api.post<CartItem>(
-      `/cart/items?productVariantId=${productVariantId}&quantity=${quantity}`,
-    );
+  addItem: async (payload: AddCartItemRequest): Promise<CartItem> => {
+    const res = await api.post<CartItem>("/cart/items", payload);
     return extractData<CartItem>(res);
   },
 
@@ -33,9 +35,8 @@ export const cartApi = {
     cartItemId: number,
     quantity: number,
   ): Promise<CartItem> => {
-    const res = await api.put<CartItem>(`/cart/items/${cartItemId}`, {
-      quantity,
-    });
+    const body: UpdateCartItemRequest = { quantity };
+    const res = await api.put<CartItem>(`/cart/items/${cartItemId}`, body);
     return extractData<CartItem>(res);
   },
 

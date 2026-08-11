@@ -75,5 +75,6 @@ public record ProductResponse(
       String sku,
       BigDecimal priceOverride,
       BigDecimal effectivePrice,
-      String attributesJson) {}
+      String attributesJson,
+      Integer stockQuantity) {}
 }
