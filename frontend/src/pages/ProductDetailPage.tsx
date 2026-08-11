@@ -15,6 +15,7 @@ export default function ProductDetailPage() {
     data: product,
     isLoading,
     error,
+    refetch,
   } = useQuery({
     queryKey: ["product", slug],
     queryFn: () => productsApi.getBySlug(slug!),
@@ -186,6 +187,7 @@ export default function ProductDetailPage() {
         productId={product.id}
         averageRating={product.averageRating ?? 0}
         reviewCount={product.reviewCount ?? 0}
+        onReviewSubmitted={refetch}
       />
     </div>
   );

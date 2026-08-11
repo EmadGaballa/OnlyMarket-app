@@ -1,18 +1,25 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { RatingStars } from "./RatingStars";
 import { ratingsApi, Review } from "../api/ratings";
+import { useAuth } from "../context/AuthContext";
 
 interface ProductReviewsProps {
   productId: number | string;
   averageRating?: number;
   reviewCount?: number;
+  onReviewSubmitted?: () => void;
 }
 
 export const ProductReviews: React.FC<ProductReviewsProps> = ({
   productId,
   averageRating = 0,
   reviewCount = 0,
+  onReviewSubmitted,
 }) => {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const location = useLocation();
+
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,12 +74,19 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
       setNewComment("");
       setIsFormOpen(false);
       await loadReviewData();
+      onReviewSubmitted?.();
     } catch (err: any) {
       console.error("Failed to submit review:", err);
-      setSubmitError(
-        err?.response?.data?.message ||
-          "Failed to submit review. You may need to log in first.",
-      );
+      // client.ts throws an Error whose message is the raw JSON body for
+      // non-2xx responses — parse it to surface the backend's message.
+      let message = "Failed to submit review. You may need to log in first.";
+      try {
+        const parsed = JSON.parse(err?.message ?? "{}");
+        if (parsed?.message) message = parsed.message;
+      } catch {
+        // not JSON — fall back to the raw text, or the generic message above
+      }
+      setSubmitError(message);
     } finally {
       setSubmitting(false);
     }
@@ -143,21 +157,40 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
             Based on {displayCount} {displayCount === 1 ? "review" : "reviews"}
           </div>
 
-          <button
-            onClick={() => setIsFormOpen((prev) => !prev)}
-            style={{
-              marginTop: "1.25rem",
-              padding: "0.625rem 1.25rem",
-              backgroundColor: "#2563eb",
-              color: "#fff",
-              fontWeight: "600",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-            }}
-          >
-            {isFormOpen ? "Cancel" : "Write a Review"}
-          </button>
+          {authLoading ? null : isAuthenticated ? (
+            <button
+              onClick={() => setIsFormOpen((prev) => !prev)}
+              style={{
+                marginTop: "1.25rem",
+                padding: "0.625rem 1.25rem",
+                backgroundColor: "#2563eb",
+                color: "#fff",
+                fontWeight: "600",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+              }}
+            >
+              {isFormOpen ? "Cancel" : "Write a Review"}
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              state={{ from: { pathname: location.pathname } }}
+              style={{
+                display: "inline-block",
+                marginTop: "1.25rem",
+                padding: "0.625rem 1.25rem",
+                backgroundColor: "#2563eb",
+                color: "#fff",
+                fontWeight: "600",
+                textDecoration: "none",
+                borderRadius: "8px",
+              }}
+            >
+              Log in to write a review
+            </Link>
+          )}
         </div>
 
         {/* STAR DISTRIBUTION BARS */}
@@ -218,7 +251,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
       </div>
 
       {/* REVIEW FORM */}
-      {isFormOpen && (
+      {isAuthenticated && isFormOpen && (
         <form
           onSubmit={handleSubmit}
           style={{

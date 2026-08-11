@@ -86,11 +86,7 @@ public class ProductController {
       throw new IllegalStateException("User authentication principal is missing or invalid");
     }
     String email = authentication.getName();
-    return ResponseEntity.ok(productService.addReview(productId, resolveDisplayName(email), email, request));
-  }
-
-  private String resolveDisplayName(String email) {
-    return email.substring(0, email.indexOf('@'));
+    return ResponseEntity.ok(productService.addReview(productId, email, request));
   }
 
   @PostMapping

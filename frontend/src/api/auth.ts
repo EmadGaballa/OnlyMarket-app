@@ -15,5 +15,5 @@ export const authApi = {
     api.post<void>('/auth/logout'),
 
   me: () =>
-    api.get<User>('/auth/me'),
+    api.get<User>('/users/me'),
 };

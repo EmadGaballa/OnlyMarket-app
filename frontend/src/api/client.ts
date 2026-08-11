@@ -25,17 +25,19 @@ async function request<T>(
   });
 
   if (response.status === 401 && !isRetry) {
-    // Only attempt refresh if we previously had an access token.
-    // If there's no token, the user is simply not authenticated — no refresh needed.
-    if (!accessToken) {
-      return response.json() as Promise<T>;
-    }
+    // Try to refresh via the httpOnly refresh cookie. This also runs when there
+    // is no in-memory access token (e.g. right after a full page reload) so a
+    // still-valid cookie can restore the session before the request is retried.
     const refreshed = await refreshToken();
     if (refreshed) {
       return request<T>(path, options, true);
     }
+    // No usable refresh cookie (or refresh failed). Surface the auth failure to
+    // the caller instead of resolving with the error body, which previously made
+    // 401 responses look like successes and broke caller-side handling.
     logout();
-    throw new Error("Session expired");
+    const text = await response.text().catch(() => "");
+    throw new Error(text || `HTTP ${response.status}`);
   }
 
   if (!response.ok) {
@@ -57,7 +59,11 @@ async function refreshToken(): Promise<boolean> {
     try {
       const response = await fetch(`${API_BASE}/auth/refresh`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // Required by the backend's /auth/refresh endpoint as a CSRF mitigation.
+          "X-Requested-With": "XMLHttpRequest",
+        },
         credentials: "include",
       });
       if (!response.ok) return false;

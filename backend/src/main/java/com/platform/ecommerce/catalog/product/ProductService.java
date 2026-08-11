@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -168,17 +169,37 @@ public class ProductService {
   }
 
   @Transactional
-  public ReviewResponse addReview(Long productId, String reviewerName, String reviewerEmail, ReviewRequest request) {
+  @CacheEvict(value = "products", allEntries = true)
+  public ReviewResponse addReview(Long productId, String reviewerEmail, ReviewRequest request) {
     Product product = productRepository.findById(productId)
         .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
 
+    // The controller guarantees an authenticated principal, so the reviewer must
+    // always be resolvable by email. Fail loudly rather than silently persisting
+    // a review that is not linked to a user account.
+    User reviewer = userRepository.findByEmail(reviewerEmail)
+        .orElseThrow(() -> new ResourceNotFoundException("User with email " + reviewerEmail));
+
+    // One review per user per product (matches UNIQUE (product_id, user_id)).
+    if (reviewRepository.existsByProduct_IdAndReviewer_Id(productId, reviewer.getId())) {
+      throw new DuplicateResourceException("You've already reviewed this product");
+    }
+
     Review review = new Review();
     review.setProduct(product);
+    review.setReviewer(reviewer);
     review.setRating(request.rating());
     review.setComment(request.comment());
-    review.setReviewerName(reviewerName);
+    review.setReviewerName(reviewer.getFullName());
     review.setReviewerEmail(reviewerEmail);
-    reviewRepository.save(review);
+
+    try {
+      reviewRepository.save(review);
+    } catch (DataIntegrityViolationException ex) {
+      // Defensive backstop for a concurrent duplicate submission racing the check
+      // above; surfaces the same user-friendly error instead of a raw 500.
+      throw new DuplicateResourceException("You've already reviewed this product");
+    }
 
     recalculateRatingSummary(product);
 

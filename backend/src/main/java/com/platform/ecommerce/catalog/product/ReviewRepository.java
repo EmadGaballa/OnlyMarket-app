@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     List<Review> findByProduct_IdOrderByCreatedAtDesc(Long productId);
+
+    boolean existsByProduct_IdAndReviewer_Id(Long productId, Long userId);
 }
