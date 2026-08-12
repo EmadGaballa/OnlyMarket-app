@@ -3,6 +3,12 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { productsApi } from "../api/products";
 import { RatingStars } from "../components/RatingStars";
+
+import {
+  resolveDefaultVariantId,
+  getProductPricing,
+  formatVariantName,
+} from "../utils/product";
 import { ProductReviews } from "../components/ProductReviews";
 import AddToCartButton from "../components/AddToCartButton";
 import { useCart } from "../hooks/useCart";
@@ -11,7 +17,6 @@ import {
   useAddToWishlist,
   useRemoveFromWishlist,
 } from "../hooks/useWishlist";
-import { formatVariantName, resolveDefaultVariantId } from "../utils/product";
 import styles from "./ProductDetailPage.module.css";
 
 export default function ProductDetailPage() {
@@ -41,6 +46,10 @@ export default function ProductDetailPage() {
     product?.variants?.find((v) => v.id === targetVariantId) ??
     product?.variants?.[0];
   const unitPrice = selectedVariant?.effectivePrice ?? product?.basePrice ?? 0;
+
+  const { originalPrice, discountPercent, hasDiscount } = product
+    ? getProductPricing(product.id, unitPrice)
+    : { originalPrice: 0, discountPercent: 0, hasDiscount: false };
   const stockQuantity = selectedVariant?.stockQuantity;
   const variantAttributesJson = selectedVariant?.attributesJson;
 
@@ -215,7 +224,17 @@ export default function ProductDetailPage() {
           </div>
 
           <div className={styles.priceContainer}>
-            <span className={styles.price}>${(unitPrice ?? 0).toFixed(2)}</span>
+            <span className={styles.price}>${unitPrice.toFixed(2)}</span>
+            {hasDiscount && (
+              <>
+                <span className={styles.oldPrice}>
+                  ${originalPrice.toFixed(2)}
+                </span>
+                <span className={styles.discountBadge}>
+                  {discountPercent}% OFF
+                </span>
+              </>
+            )}
             {stockQuantity != null && stockQuantity <= 5 && (
               <span className={styles.stockNotice}>
                 {stockQuantity > 0

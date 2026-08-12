@@ -109,6 +109,16 @@ export interface Product {
   updatedAt?: string;
 }
 
+/**
+ * Computed pricing details for UI consumption
+ */
+export interface ProductPricing {
+  currentPrice: number;
+  originalPrice: number;
+  discountPercent: number;
+  hasDiscount: boolean;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  API Request & Query Payloads                                              */
 /* -------------------------------------------------------------------------- */

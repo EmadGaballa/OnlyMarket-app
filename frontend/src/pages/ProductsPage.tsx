@@ -4,7 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { productsApi } from "../api/products";
 import { RatingStars } from "../components/RatingStars";
 import AddToCartButton from "../components/AddToCartButton";
-import { formatVariantName, resolveDefaultVariantId } from "../utils/product";
+import {
+  resolveDefaultVariantId,
+  getProductPricing,
+  formatVariantName,
+} from "../utils/product";
 import type { Product, Category, Brand } from "../types/catalog";
 import {
   useWishlist,
@@ -386,8 +390,8 @@ function ProductCard({ product }: { product: Product }) {
     : null;
   const maxAvailableQuantity = defaultVariant?.stockQuantity;
 
-  const originalPrice = product.basePrice * 1.2;
-  const discountPercent = 20;
+  const { currentPrice, originalPrice, discountPercent, hasDiscount } =
+    getProductPricing(product.id, product.basePrice);
 
   const { data: wishlist } = useWishlist();
   const addToWishlist = useAddToWishlist();
@@ -407,13 +411,14 @@ function ProductCard({ product }: { product: Product }) {
   return (
     <div className={styles.card}>
       <Link to={`/products/${product.slug}`} className={styles.cardLink}>
-        {/* Top Badges */}
+        {/* Badge Section */}
         <div className={styles.badgeContainer}>
-          <span className={styles.discountBadge}>{discountPercent}% OFF</span>
+          {hasDiscount && (
+            <span className={styles.discountBadge}>{discountPercent}% OFF</span>
+          )}
           <button
             type="button"
             className={styles.wishlistBtn}
-            title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
             onClick={handleWishlistClick}
           >
             {isWishlisted ? "♥" : "♡"}
@@ -449,15 +454,24 @@ function ProductCard({ product }: { product: Product }) {
             />
           </div>
 
-          {/* Pricing */}
+          {/* Pricing Row */}
           <div className={styles.priceRow}>
             <span className={styles.currency}>$</span>
             <span className={styles.currentPrice}>
-              {product.basePrice.toLocaleString(undefined, {
+              {currentPrice.toLocaleString(undefined, {
                 minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
               })}
             </span>
-            <span className={styles.oldPrice}>${originalPrice.toFixed(2)}</span>
+            {hasDiscount && (
+              <span className={styles.oldPrice}>
+                $
+                {originalPrice.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            )}
           </div>
 
           {/* Express & Fulfillment Badges */}
