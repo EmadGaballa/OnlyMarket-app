@@ -1,5 +1,6 @@
 package com.platform.ecommerce.auth.dto;
 
+import com.platform.ecommerce.common.validation.ValidPassword;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -10,7 +11,8 @@ public record ResetPasswordRequest(
     @NotBlank(message = "Reset token is required")
     String token,
 
-    @Schema(description = "New password (minimum 8 characters)", example = "N3w!Passw0rd")
+    @Schema(description = "New password", example = "N3w!Passw0rd")
     @NotBlank(message = "New password is required")
-    @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
+    @ValidPassword
+    @Size(max = 100, message = "Password must be at most 100 characters")
     String newPassword) {}

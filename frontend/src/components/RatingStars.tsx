@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import styles from "./RatingStars.module.css";
 
 interface RatingStarsProps {
   rating?: number; // e.g. 4.5
@@ -35,16 +36,11 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
   return (
     <div
       aria-label={`Rating: ${rating.toFixed(1)} out of ${maxStars}`}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "6px",
-        fontSize: `${size * 0.875}px`,
-        lineHeight: 1,
-      }}
-      className={className}
+      /* 1. APPLY CONTAINER CLASS FROM CSS MODULE HERE */
+      className={`${styles.container} ${className}`.trim()}
+      style={{ fontSize: `${size * 0.875}px` }}
     >
-      <div style={{ display: "inline-flex", gap: "2px" }}>
+      <div className={styles.starsGroup}>
         {Array.from({ length: maxStars }).map((_, i) => {
           const starValue = i + 1;
           const fillPercentage = Math.max(
@@ -58,12 +54,11 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
               onClick={() => handleStarClick(starValue)}
               onMouseEnter={() => interactive && setHoverRating(starValue)}
               onMouseLeave={() => interactive && setHoverRating(null)}
+              /* 2. APPLY STAR ITEM & INTERACTIVE CLASSES */
+              className={`${styles.starItem} ${interactive ? styles.interactive : ""}`.trim()}
               style={{
-                position: "relative",
                 width: `${size}px`,
                 height: `${size}px`,
-                cursor: interactive ? "pointer" : "default",
-                display: "inline-block",
               }}
             >
               {/* Background Empty Star */}
@@ -71,29 +66,21 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
                 width={size}
                 height={size}
                 viewBox="0 0 24 24"
-                fill="#e5e7eb"
-                style={{ position: "absolute", top: 0, left: 0 }}
+                className={styles.emptySvg}
               >
                 <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
               </svg>
 
               {/* Filled Star with Fractional Width */}
               <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: `${fillPercentage}%`,
-                  overflow: "hidden",
-                  whiteSpace: "nowrap",
-                  pointerEvents: "none",
-                }}
+                className={styles.fillContainer}
+                style={{ width: `${fillPercentage}%` }}
               >
                 <svg
                   width={size}
                   height={size}
                   viewBox="0 0 24 24"
-                  fill="#f59e0b"
+                  className={styles.filledSvg}
                 >
                   <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                 </svg>
@@ -104,13 +91,13 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
       </div>
 
       {showValue && (
-        <span style={{ fontWeight: 600, color: "#374151" }}>
+        <span className={styles.valueText}>
           {rating ? rating.toFixed(1) : "0.0"}
         </span>
       )}
 
       {showCount && reviewCount !== undefined && (
-        <span style={{ color: "#6b7280" }}>({reviewCount})</span>
+        <span className={styles.countText}>({reviewCount})</span>
       )}
     </div>
   );

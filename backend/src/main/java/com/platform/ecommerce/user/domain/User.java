@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -88,6 +89,18 @@ public class User {
 
   @Column(name = "deleted_at")
   private Instant deletedAt;
+
+  /** When the password was last changed. {@code null} means it was never changed. */
+  @Column(name = "last_password_change_at")
+  private LocalDateTime lastPasswordChangeAt;
+
+  /** When the full name was last changed. {@code null} means it was never changed. */
+  @Column(name = "last_name_change_at")
+  private LocalDateTime lastNameChangeAt;
+
+  /** When the email was last changed. {@code null} means it was never changed. */
+  @Column(name = "last_email_change_at")
+  private LocalDateTime lastEmailChangeAt;
 
   public String getFullName() {
     return firstName + " " + lastName;

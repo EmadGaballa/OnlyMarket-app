@@ -1,0 +1,33 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.platform:ecommerce-backend >-------------------
+[INFO] Building ecommerce-backend 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ ecommerce-backend ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 7 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ ecommerce-backend ---
+[INFO] Recompiling the module because of added or removed source files.
+[INFO] Compiling 129 source files with javac [debug parameters release 21] to target\classes
+mvn : WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+At line:1 char:58
++ ... EMG\Downloads\java-project\java-web\backend; mvn compile 2>&1 | Out-F ...
++                                                  ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: A term...has been called:String) [], RemoteExcep 
+   tion
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by lombok.permit.Permit
+WARNING: Please consider reporting this to the maintainers of class lombok.permit.Permit
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[INFO] /C:/Users/EMG/Downloads/java-project/java-web/backend/src/main/java/com/platform/ecommerce/config/RedisConfig.java: C:\Users\EMG\Downloads\java-project\java-web\backend\src\main\java\com\platform\ecommerce\config\RedisConfig.java uses or overrides a deprecated API.
+[INFO] /C:/Users/EMG/Downloads/java-project/java-web/backend/src/main/java/com/platform/ecommerce/config/RedisConfig.java: Recompile with -Xlint:deprecation for details.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  9.530 s
+[INFO] Finished at: 2026-08-12T15:15:48+03:00
+[INFO] ------------------------------------------------------------------------

@@ -1,0 +1,108 @@
+/* ==========================================================================
+   Design Tokens & Dark/Light Mode Fallbacks
+   ========================================================================== */
+:root {
+  --rs-star-empty: var(
+    --color-border,
+    color-mix(in srgb, var(--color-text, #111827) 15%, transparent)
+  );
+  --rs-star-filled: var(--color-warning, #f59e0b);
+  --rs-text-value: var(--color-text, #374151);
+  --rs-text-count: var(--color-text-secondary, #6b7280);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --rs-star-empty: var(
+      --color-border,
+      color-mix(in srgb, var(--color-text, #f9fafb) 20%, transparent)
+    );
+    --rs-text-value: var(--color-text, #f3f4f6);
+    --rs-text-count: var(--color-text-secondary, #9ca3af);
+  }
+}
+
+[data-theme="dark"],
+.dark {
+  --rs-star-empty: var(
+    --color-border,
+    color-mix(in srgb, var(--color-text, #f9fafb) 20%, transparent)
+  );
+  --rs-text-value: var(--color-text, #f3f4f6);
+  --rs-text-count: var(--color-text-secondary, #9ca3af);
+}
+
+/* ==========================================================================
+   Rating Stars Layout
+   ========================================================================== */
+.container {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+}
+
+.starsGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.starItem {
+  position: relative;
+  display: inline-block;
+  cursor: default;
+  outline: none;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive {
+  cursor: pointer;
+}
+
+.interactive:hover,
+.interactive:focus-visible {
+  transform: scale(1.18);
+}
+
+.interactive:focus-visible {
+  outline: 2px solid var(--color-primary, #3b82f6);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Star SVG Fill Layers */
+.emptySvg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  fill: var(--rs-star-empty);
+  transition: fill 0.2s ease;
+}
+
+.fillContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+  height: 100%;
+  transition: width 0.15s ease-out;
+}
+
+.filledSvg {
+  fill: var(--rs-star-filled);
+}
+
+/* Typography Labels */
+.valueText {
+  font-weight: 600;
+  color: var(--rs-text-value);
+  letter-spacing: -0.01em;
+}
+
+.countText {
+  color: var(--rs-text-count);
+  font-weight: 400;
+}

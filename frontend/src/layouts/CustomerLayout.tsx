@@ -1,10 +1,4 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-  FormEvent,
-  SVGProps,
-} from "react";
+import { useState, useEffect, useRef, SVGProps } from "react";
 import {
   Outlet,
   Link,
@@ -13,11 +7,12 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { SearchBar } from "./SearchBar";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { useCart } from "../hooks/useCart";
 import { productsApi } from "../api/products";
-import type { Category } from "../types/catalog";
+import type { Category, Brand } from "../types/catalog";
 import styles from "./CustomerLayout.module.css";
 
 type IconProps = SVGProps<SVGSVGElement>;
@@ -26,7 +21,6 @@ type IconProps = SVGProps<SVGSVGElement>;
 /*  Helper functions to clean up and group category names                     */
 /* -------------------------------------------------------------------------- */
 
-// 1. Removes dashes "-" and capitalizes the first letter of every word
 const formatCategoryName = (rawName: string): string => {
   if (!rawName) return "";
   return rawName
@@ -34,7 +28,6 @@ const formatCategoryName = (rawName: string): string => {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
-// 2. Maps small categories into bigger, broader category labels
 const BROAD_CATEGORY_MAP: Record<string, string> = {
   fragrances: "Beauty & Fragrance",
   skincare: "Beauty & Fragrance",
@@ -53,7 +46,6 @@ const BROAD_CATEGORY_MAP: Record<string, string> = {
   groceries: "Groceries",
 };
 
-// 3. Checks the map first; if not found, falls back to fixing dashes & caps
 const getBroadCategoryName = (rawName: string): string => {
   const normalizedKey = rawName.toLowerCase().trim();
   if (BROAD_CATEGORY_MAP[normalizedKey]) {
@@ -71,8 +63,9 @@ export default function CustomerLayout() {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [visibleCategoriesCount, setVisibleCategoriesCount] = useState(6);
+  const [visibleBrandsCount, setVisibleBrandsCount] = useState(6);
 
-  // Category scroll container reference
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -81,35 +74,34 @@ export default function CustomerLayout() {
 
   // Unified URL Query Parameters Manager
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeSearch = searchParams.get("search") || "";
   const activeCategoryId = searchParams.get("categoryId") || "";
+  const activeBrandId = searchParams.get("brandId") || "";
 
-  // Controlled input for search bar
-  const [searchQuery, setSearchQuery] = useState(activeSearch);
-
-  // Fetch real Categories from Backend API (matches ProductsPage)
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: productsApi.listCategories,
   });
 
-  // Shared cart cache — powers the header item-count badge. Auto-gated to
-  // authenticated users inside the hook.
+  const { data: brands } = useQuery({
+    queryKey: ["brands"],
+    queryFn: productsApi.listBrands,
+  });
+
   const { data: cartData } = useCart();
   const cartItemCount = cartData?.itemCount ?? 0;
 
-  // Keep search input synced with URL changes
-  useEffect(() => {
-    setSearchQuery(activeSearch);
-  }, [activeSearch]);
-
-  // Close menus on navigation
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setIsProfileMenuOpen(false);
   }, [location.pathname]);
 
-  // Handle clicking outside profile dropdown & pressing Escape key
+  useEffect(() => {
+    if (!isMobileMenuOpen) {
+      setVisibleCategoriesCount(6);
+      setVisibleBrandsCount(6);
+    }
+  }, [isMobileMenuOpen]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -138,7 +130,6 @@ export default function CustomerLayout() {
     };
   }, [isProfileMenuOpen]);
 
-  // Category Horizontal Smooth Scroll
   const handleScroll = (direction: "left" | "right") => {
     if (categoryScrollRef.current) {
       const scrollAmount = 280;
@@ -149,7 +140,6 @@ export default function CustomerLayout() {
     }
   };
 
-  // Helper function to update URL Search Parameters cleanly
   const updateQueryParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams);
 
@@ -159,10 +149,8 @@ export default function CustomerLayout() {
       next.delete(key);
     }
 
-    // Reset pagination to first page whenever filter/category changes
     next.set("page", "0");
 
-    // If not on root catalog page, navigate to catalog root with new search params
     if (location.pathname !== "/") {
       navigate(`/?${next.toString()}`);
     } else {
@@ -170,28 +158,22 @@ export default function CustomerLayout() {
     }
   };
 
-  // Handle Search submit
-  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    updateQueryParam("search", searchQuery.trim() || null);
+  const handleSearchSubmit = (query: string) => {
+    updateQueryParam("search", query.trim() || null);
   };
 
   return (
     <div className={styles.layout} data-theme={theme}>
-      {/* Accessibility Skip Link */}
       <a href="#main-content" className={styles.skipLink}>
         Skip to main content
       </a>
 
-      {/* Top Banner Notice */}
       <div className={styles.topBar}>
-        <p>⚡ Free worldwide shipping on orders over $50!</p>
+        <p>⚡ Free worldwide shipping on orders over $75!</p>
       </div>
 
-      {/* Main Header */}
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          {/* Logo & Mobile Menu Toggle */}
           <div className={styles.brandGroup}>
             <button
               className={styles.mobileMenuBtn}
@@ -208,34 +190,25 @@ export default function CustomerLayout() {
             </Link>
           </div>
 
-          {/* Search Bar */}
-          <form className={styles.searchForm} onSubmit={handleSearch}>
-            <input
-              type="text"
+          {/* Corrected SearchBar Component Integration */}
+          <div className={styles.searchBarSlot}>
+            <SearchBar
+              onSearch={(query) => handleSearchSubmit(query)}
               placeholder="Search products, brands, categories..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={styles.searchInput}
             />
-            <button
-              type="submit"
-              className={styles.searchBtn}
-              aria-label="Search"
-            >
-              <SearchIcon />
-            </button>
-          </form>
+          </div>
 
-          {/* Header Action Nav */}
           <nav className={styles.headerActions}>
-            <button
-              onClick={toggleTheme}
-              className={styles.iconBtn}
-              title={`Switch to ${theme === "light" ? "Dark" : "Light"} Mode`}
-              aria-label="Toggle theme"
-            >
-              {theme === "light" ? <MoonIcon /> : <SunIcon />}
-            </button>
+            {!isAuthenticated && (
+              <button
+                onClick={toggleTheme}
+                className={styles.iconBtn}
+                title={`Switch to ${theme === "light" ? "Dark" : "Light"} Mode`}
+                aria-label="Toggle theme"
+              >
+                {theme === "light" ? <MoonIcon /> : <SunIcon />}
+              </button>
+            )}
 
             {isAuthenticated ? (
               <>
@@ -269,7 +242,6 @@ export default function CustomerLayout() {
                   <span className={styles.mobileNavLabel}>Cart</span>
                 </Link>
 
-                {/* Profile Dropdown */}
                 <div
                   ref={profileDropdownRef}
                   className={styles.profileDropdownContainer}
@@ -301,23 +273,60 @@ export default function CustomerLayout() {
                         <p className={styles.userEmail}>{user?.email || ""}</p>
                       </div>
                       <hr className={styles.divider} />
+                      <button
+                        onClick={toggleTheme}
+                        className={styles.dropdownItem}
+                        role="menuitem"
+                      >
+                        {theme === "light" ? "Dark Mode" : "Light Mode"}
+                      </button>
+
+                      <hr className={styles.divider} />
+
                       <Link
                         to="/profile"
                         className={styles.dropdownItem}
                         role="menuitem"
+                        onClick={() => setIsProfileMenuOpen(false)}
                       >
                         Profile & Orders
                       </Link>
+
                       <Link
-                        to="/favorites"
+                        to="/account/settings"
                         className={styles.dropdownItem}
                         role="menuitem"
+                        onClick={() => setIsProfileMenuOpen(false)}
                       >
-                        Favorite Sellers
+                        Account Settings
                       </Link>
+
+                      {/* 🆕 Help Link */}
+                      <Link
+                        to="/support"
+                        className={styles.dropdownItem}
+                        role="menuitem"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                      >
+                        Help
+                      </Link>
+
+                      {/* <Link
+  to="/favorites"
+  className={styles.dropdownItem}
+  role="menuitem"
+  onClick={() => setIsProfileMenuOpen(false)}
+>
+  Favorite Sellers
+</Link> */}
+
                       <hr className={styles.divider} />
+
                       <button
-                        onClick={logout}
+                        onClick={() => {
+                          setIsProfileMenuOpen(false);
+                          logout();
+                        }}
                         className={`${styles.dropdownItem} ${styles.logoutBtn}`}
                         role="menuitem"
                       >
@@ -340,7 +349,14 @@ export default function CustomerLayout() {
           </nav>
         </div>
 
-        {/* Dynamic Category Navigation Bar with Scroll Arrows */}
+        {isMobileMenuOpen && (
+          <div
+            className={styles.mobileMenuOverlay}
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
         <nav
           className={`${styles.categoryNav} ${
             isMobileMenuOpen ? styles.mobileNavOpen : ""
@@ -359,7 +375,6 @@ export default function CustomerLayout() {
               </button>
 
               <div className={styles.categoryLinks} ref={categoryScrollRef}>
-                {/* All Products Default Filter */}
                 <button
                   type="button"
                   className={`${styles.navLink} ${
@@ -370,12 +385,8 @@ export default function CustomerLayout() {
                   All Products
                 </button>
 
-                {/* API Dynamically Loaded Categories */}
-                {/* API Dynamically Loaded Categories */}
                 {categories?.map((cat: Category) => {
                   const isActive = String(cat.id) === activeCategoryId;
-
-                  // Converts "mens-shoes" -> "Men's Fashion" or "Mens Shoes"
                   const displayName = getBroadCategoryName(cat.name);
 
                   return (
@@ -405,33 +416,173 @@ export default function CustomerLayout() {
               </button>
             </div>
 
-            {isAuthenticated && (
-              <div className={styles.mobileOnlyLinks}>
-                <hr className={styles.divider} />
-                <Link to="/cart" className={styles.navLink}>
-                  My Cart
-                </Link>
-                <Link to="/wishlist" className={styles.navLink}>
-                  Wishlist
-                </Link>
-                <Link to="/profile" className={styles.navLink}>
-                  Profile Settings
-                </Link>
-                <button onClick={logout} className={styles.mobileLogoutBtn}>
-                  Logout
+            <div className={styles.mobileCategoryPanel}>
+              <div className={styles.mobilePanelHeader}>
+                <span>Browse OnlyMarket</span>
+                <button
+                  type="button"
+                  className={styles.mobilePanelClose}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  aria-label="Close menu"
+                >
+                  <CloseIcon />
                 </button>
               </div>
-            )}
+
+              <div className={styles.mobilePanelGreeting}>
+                {isAuthenticated ? (
+                  <span>
+                    Hello, <strong>{userDisplayName || "there"}</strong>
+                  </span>
+                ) : (
+                  <Link
+                    to="/login"
+                    className={styles.mobilePanelSignIn}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Sign in <span aria-hidden="true">›</span>
+                  </Link>
+                )}
+              </div>
+
+              <button
+                type="button"
+                className={styles.mobilePanelHomeLink}
+                onClick={() => {
+                  updateQueryParam("categoryId", null);
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                <StoreIcon className={styles.mobilePanelIcon} />
+                <span>All Products</span>
+              </button>
+
+              <div className={styles.mobilePanelSectionLabel}>
+                Top Categories
+              </div>
+              <div className={styles.mobilePanelList}>
+                {categories
+                  ?.slice(0, visibleCategoriesCount)
+                  .map((cat: Category) => {
+                    const isActive = String(cat.id) === activeCategoryId;
+                    const displayName = getBroadCategoryName(cat.name);
+
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        className={`${styles.mobilePanelRow} ${
+                          isActive ? styles.mobilePanelRowActive : ""
+                        }`}
+                        onClick={() => {
+                          updateQueryParam("categoryId", String(cat.id));
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        {displayName}
+                      </button>
+                    );
+                  })}
+
+                {categories &&
+                  categories.length > 6 &&
+                  (visibleCategoriesCount < categories.length ? (
+                    <button
+                      type="button"
+                      className={styles.mobilePanelShowMore}
+                      onClick={() =>
+                        setVisibleCategoriesCount((prev) =>
+                          Math.min(prev + 6, categories.length),
+                        )
+                      }
+                    >
+                      Show more
+                      <ChevronDownIcon
+                        className={styles.mobilePanelShowMoreIcon}
+                      />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.mobilePanelShowMore}
+                      onClick={() => setVisibleCategoriesCount(6)}
+                    >
+                      Show less
+                      <ChevronUpIcon
+                        className={styles.mobilePanelShowMoreIcon}
+                      />
+                    </button>
+                  ))}
+              </div>
+
+              {brands && brands.length > 0 && (
+                <>
+                  <hr className={styles.mobilePanelDivider} />
+
+                  <div className={styles.mobilePanelSectionLabel}>
+                    Top Brands
+                  </div>
+                  <div className={styles.mobilePanelList}>
+                    {brands.slice(0, visibleBrandsCount).map((brand: Brand) => {
+                      const isActive = String(brand.id) === activeBrandId;
+
+                      return (
+                        <button
+                          key={brand.id}
+                          type="button"
+                          className={`${styles.mobilePanelRow} ${
+                            isActive ? styles.mobilePanelRowActive : ""
+                          }`}
+                          onClick={() => {
+                            updateQueryParam("brandId", String(brand.id));
+                            setIsMobileMenuOpen(false);
+                          }}
+                        >
+                          {brand.name}
+                        </button>
+                      );
+                    })}
+
+                    {brands.length > 6 &&
+                      (visibleBrandsCount < brands.length ? (
+                        <button
+                          type="button"
+                          className={styles.mobilePanelShowMore}
+                          onClick={() =>
+                            setVisibleBrandsCount((prev) =>
+                              Math.min(prev + 6, brands.length),
+                            )
+                          }
+                        >
+                          Show more
+                          <ChevronDownIcon
+                            className={styles.mobilePanelShowMoreIcon}
+                          />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className={styles.mobilePanelShowMore}
+                          onClick={() => setVisibleBrandsCount(6)}
+                        >
+                          Show less
+                          <ChevronUpIcon
+                            className={styles.mobilePanelShowMoreIcon}
+                          />
+                        </button>
+                      ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </nav>
       </header>
 
-      {/* Main Content Viewport */}
       <main id="main-content" className={styles.main}>
         <Outlet />
       </main>
 
-      {/* Footer */}
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <div className={styles.footerCol}>
@@ -461,13 +612,13 @@ export default function CustomerLayout() {
             <h4>Customer Support</h4>
             <ul>
               <li>
-                <a href="#help">Help & FAQ</a>
+                <a href="/support#help">Help & FAQ</a>
               </li>
               <li>
-                <a href="#shipping">Shipping & Returns</a>
+                <a href="/support#shipping">Shipping & Returns</a>
               </li>
               <li>
-                <a href="#privacy">Privacy Policy</a>
+                <a href="/support#privacy">Privacy Policy</a>
               </li>
             </ul>
           </div>
@@ -478,10 +629,10 @@ export default function CustomerLayout() {
               Questions? Reach out to our support team 24/7.
             </p>
             <a
-              href="mailto:support@shopplatform.com"
+              href="mailto:support@onlymarket.com"
               className={styles.supportLink}
             >
-              support@shopplatform.com
+              support@onlymarket.com
             </a>
           </div>
         </div>
@@ -502,7 +653,7 @@ function StoreIcon(props: IconProps) {
       height="24"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
+      stroke="black"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -510,31 +661,9 @@ function StoreIcon(props: IconProps) {
       focusable="false"
       {...props}
     >
-      <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
-      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-      <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" />
-      <path d="M2 7h20" />
-    </svg>
-  );
-}
-
-function SearchIcon(props: IconProps) {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-      {...props}
-    >
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.3-4.3" />
+      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
+      <path d="M7 13.5L12 10l5 3.5" />
+      <path d="M9.5 21v-5a2.5 2.5 0 0 1 5 0v5" />
     </svg>
   );
 }
@@ -725,6 +854,67 @@ function MenuIcon({ isOpen, ...props }: { isOpen: boolean } & IconProps) {
       <line x1="4" x2="20" y1="12" y2="12" />
       <line x1="4" x2="20" y1="6" y2="6" />
       <line x1="4" x2="20" y1="18" y2="18" />
+    </svg>
+  );
+}
+
+function CloseIcon(props: IconProps) {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+      {...props}
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon(props: IconProps) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+      {...props}
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+function ChevronUpIcon(props: IconProps) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+      {...props}
+    >
+      <path d="m18 15-6-6-6 6" />
     </svg>
   );
 }

@@ -1,0 +1,340 @@
+/* ==========================================================================
+   CUSTOMER SUPPORT PAGE - CINEMATIC MODULAR STYLES
+   ========================================================================== */
+
+.container {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem 6rem;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --------------------------------------------------------------------------
+   1. HERO HEADER
+   -------------------------------------------------------------------------- */
+.hero {
+  text-align: center;
+  margin-bottom: 3rem;
+  position: relative;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.75rem;
+  color: var(--color-text);
+  /* Subtle gradient text accent for cinematic depth */
+  background: linear-gradient(
+    135deg,
+    var(--color-text) 60%,
+    var(--color-primary)
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero p {
+  color: var(--color-text-secondary);
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+/* --------------------------------------------------------------------------
+   2. QUICK NAVIGATION BAR (Sticky + Mobile Touch Horizontal Scroll)
+   -------------------------------------------------------------------------- */
+.quickNav {
+  position: sticky;
+  top: 1rem;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 4rem;
+  padding: 0.5rem;
+
+  /* Glassmorphism Surface */
+  background-color: var(--color-surface-glass);
+  backdrop-filter: var(--backdrop-blur-md);
+  -webkit-backdrop-filter: var(--backdrop-blur-md);
+
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-md);
+  transition:
+    border-color var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+.quickNav:hover {
+  border-color: var(--color-border-hover);
+}
+
+.quickNav a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  transition:
+    color var(--transition-fast),
+    background-color var(--transition-fast),
+    transform var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px; /* Accessible touch target */
+}
+
+.quickNav a:hover {
+  color: var(--color-primary);
+  background-color: var(--color-surface-raised);
+  transform: translateY(-1px);
+}
+
+.quickNav a:active {
+  transform: translateY(0);
+}
+
+/* --------------------------------------------------------------------------
+   3. SECTION & ANCHOR SCROLL OFFSET
+   -------------------------------------------------------------------------- */
+.section {
+  /* Offset for sticky navbar header overlap */
+  scroll-margin-top: 6rem;
+  margin-bottom: 4rem;
+}
+
+.sectionHeader {
+  margin-bottom: 2rem;
+}
+
+.sectionHeader h2 {
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  margin-bottom: 0.35rem;
+}
+
+.sectionHeader p {
+  color: var(--color-text-secondary);
+  font-size: 0.975rem;
+}
+
+/* --------------------------------------------------------------------------
+   4. FAQ GRID & CARDS
+   -------------------------------------------------------------------------- */
+.faqGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 1.5rem;
+}
+
+.faqCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform var(--transition-base),
+    border-color var(--transition-base),
+    box-shadow var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.faqCard:hover {
+  transform: translateY(-3px);
+  border-color: var(--color-border-glow);
+  box-shadow: var(--shadow-glow), var(--shadow-md);
+}
+
+.faqCard h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.faqCard p {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* --------------------------------------------------------------------------
+   5. INFO & CONTENT BLOCKS
+   -------------------------------------------------------------------------- */
+.infoBlock,
+.textBlock {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.75rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+.infoBlock:hover,
+.textBlock:hover {
+  border-color: var(--color-border-hover);
+}
+
+.infoBlock h3,
+.textBlock h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.85rem;
+  color: var(--color-text);
+}
+
+.infoBlock h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.6rem;
+  color: var(--color-text);
+}
+
+.infoBlock p,
+.textBlock p {
+  font-size: 0.938rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+}
+
+.textBlock p:last-child,
+.infoBlock p:last-child {
+  margin-bottom: 0;
+}
+
+/* Unordered & Ordered Lists */
+.infoBlock ul,
+.orderedList {
+  padding-left: 1.25rem;
+  font-size: 0.938rem;
+  color: var(--color-text-secondary);
+}
+
+.infoBlock li,
+.orderedList li {
+  margin-bottom: 0.6rem;
+}
+
+.infoBlock li strong,
+.orderedList li strong {
+  color: var(--color-text);
+}
+
+/* Accent Callout Note */
+.note {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  background-color: var(--color-surface-raised);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-primary);
+  margin-top: 1rem;
+}
+
+/* Section Divider */
+.divider {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-border-hover) 50%,
+    transparent 100%
+  );
+  margin: 4rem 0;
+}
+
+/* --------------------------------------------------------------------------
+   6. RESPONSIVE BREAKPOINTS (TABLETS & PHONES)
+   -------------------------------------------------------------------------- */
+
+/* Mobile & Small Screen Optimizations (< 768px) */
+@media (max-width: 768px) {
+  .container {
+    padding: 2rem 1rem 4rem;
+  }
+
+  .hero {
+    margin-bottom: 2rem;
+  }
+
+  /* Transform QuickNav into a swipeable pill bar on mobile */
+  .quickNav {
+    justify-content: flex-start;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.375rem;
+    border-radius: var(--radius-lg);
+    top: 0.5rem;
+    margin-bottom: 2.5rem;
+
+    /* Hide scrollbar visually while retaining native touch scroll */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .quickNav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .quickNav a {
+    scroll-snap-align: center;
+    padding: 0.5rem 1rem;
+    font-size: 0.813rem;
+    flex-shrink: 0;
+  }
+
+  .faqGrid {
+    grid-template-columns: 1fr; /* Single column on phone screens */
+    gap: 1rem;
+  }
+
+  .infoBlock,
+  .textBlock {
+    padding: 1.25rem;
+    border-radius: var(--radius-sm);
+  }
+
+  .section {
+    scroll-margin-top: 4.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .divider {
+    margin: 2.5rem 0;
+  }
+}
+
+/* Extra Small Mobile Devices (< 480px) */
+@media (max-width: 480px) {
+  .quickNav {
+    width: calc(100% + 0.5rem);
+    margin-left: -0.25rem;
+  }
+
+  .note {
+    font-size: 0.813rem;
+    padding: 0.625rem 0.875rem;
+  }
+}

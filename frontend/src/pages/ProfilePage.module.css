@@ -5,7 +5,7 @@
   justify-content: center;
   min-height: calc(100vh - 180px);
   padding: 32px 20px;
-  background-color: var(--color-bg);
+  background-color: transparent;
   transition: background-color var(--transition-fast, 0.2s ease);
 }
 
@@ -61,6 +61,26 @@
   font-size: 0.9rem;
   color: var(--color-text-secondary);
   margin: 0;
+}
+
+.settingsLink {
+  align-self: flex-end;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.settingsLink:hover {
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  border-color: var(--color-primary);
 }
 
 /* Divider Line */
@@ -274,4 +294,60 @@
     height: 72px;
     font-size: 1.75rem;
   }
+}
+
+.ordersSection {
+  margin-top: 1.5rem;
+}
+
+.ordersList {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.orderCard {
+  border: 1px solid var(--border-color, #e5e5e5);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.orderCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.cancelOrderBtn {
+  margin-top: 0.75rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #c2410c; /* Warm amber-orange */
+  background-color: #fff7ed; /* Soft light peach */
+  border: 1px solid #fed7aa; /* Gentle orange border */
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.cancelOrderBtn:hover {
+  color: #9a3412;
+  background-color: #ffedd5; /* Slightly deeper warm tint */
+  border-color: #fdba74;
+}
+
+.cancelOrderBtn:active {
+  transform: translateY(1px);
+}
+
+.cancelOrderBtn:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+.ordersTitle {
+  margin-bottom: 1rem;
 }

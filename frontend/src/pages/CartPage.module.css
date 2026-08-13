@@ -1,10 +1,12 @@
-/* Page Layout & Main Container */
+/* ==========================================================================
+   Page Layout & Main Container
+   ========================================================================== */
 .page {
   display: flex;
   justify-content: center;
   min-height: calc(100vh - 180px);
   padding: 32px 20px;
-  background-color: var(--color-bg);
+  background-color: transparent;
   transition: background-color var(--transition-fast, 0.2s ease);
 }
 
@@ -16,7 +18,9 @@
   gap: 32px;
 }
 
-/* Header Section */
+/* ==========================================================================
+   Header Section
+   ========================================================================== */
 .headerGroup {
   display: flex;
   flex-direction: column;
@@ -54,7 +58,9 @@
   margin: 0;
 }
 
-/* Empty State Card */
+/* ==========================================================================
+   Empty State Card
+   ========================================================================== */
 .emptyCard {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -119,7 +125,9 @@
   transform: translateY(-1px);
 }
 
-/* Main Content Grid Layout (Items + Sidebar) */
+/* ==========================================================================
+   Main Grid Layout (Items + Sidebar)
+   ========================================================================== */
 .cartGrid {
   display: grid;
   grid-template-columns: 1fr 340px;
@@ -133,7 +141,9 @@
   gap: 20px;
 }
 
-/* Free Shipping Banner */
+/* ==========================================================================
+   Free Shipping Banner
+   ========================================================================== */
 .shippingBanner {
   background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
   border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
@@ -169,7 +179,9 @@
   transition: width 0.4s ease;
 }
 
-/* Cart Items List */
+/* ==========================================================================
+   Cart Items List
+   ========================================================================== */
 .cartList {
   display: flex;
   flex-direction: column;
@@ -301,7 +313,7 @@
   border-radius: 4px;
 }
 
-/* Stock / availability warning */
+/* Stock / Availability Warning */
 .stockWarning {
   align-self: flex-start;
   font-size: 0.78rem;
@@ -412,7 +424,9 @@
   cursor: not-allowed;
 }
 
-/* Sidebar Order Summary */
+/* ==========================================================================
+   Sidebar Order Summary
+   ========================================================================== */
 .summarySidebar {
   position: sticky;
   top: 24px;
@@ -514,7 +528,9 @@
   color: var(--color-text-secondary);
 }
 
-/* Loading & Error States */
+/* ==========================================================================
+   Loading & Error States
+   ========================================================================== */
 .loadingCard,
 .errorCard {
   background: var(--color-surface);
@@ -608,7 +624,9 @@
   transform: translateY(-1px);
 }
 
-/* Mobile & Tablet Responsiveness */
+/* ==========================================================================
+   Mobile & Tablet Responsiveness
+   ========================================================================== */
 @media (max-width: 900px) {
   .cartGrid {
     grid-template-columns: 1fr;

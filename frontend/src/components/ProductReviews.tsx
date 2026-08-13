@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { RatingStars } from "./RatingStars";
 import { ratingsApi, Review } from "../api/ratings";
 import { useAuth } from "../context/AuthContext";
+import styles from "./ProductReviews.module.css";
 
 interface ProductReviewsProps {
   productId: number | string;
@@ -77,14 +78,12 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
       onReviewSubmitted?.();
     } catch (err: any) {
       console.error("Failed to submit review:", err);
-      // client.ts throws an Error whose message is the raw JSON body for
-      // non-2xx responses — parse it to surface the backend's message.
       let message = "Failed to submit review. You may need to log in first.";
       try {
         const parsed = JSON.parse(err?.message ?? "{}");
         if (parsed?.message) message = parsed.message;
       } catch {
-        // not JSON — fall back to the raw text, or the generic message above
+        // Fall back to generic message
       }
       setSubmitError(message);
     } finally {
@@ -92,7 +91,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
     }
   };
 
-  // Calculate local breakdown from loaded reviews (or default to 0)
+  // Calculate local breakdown from loaded reviews
   const distribution = reviews.reduce(
     (acc, rev) => {
       const r = Math.round(rev.rating) as 1 | 2 | 3 | 4 | 5;
@@ -105,47 +104,14 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
   const displayCount = reviews.length > 0 ? reviews.length : reviewCount;
 
   return (
-    <section
-      style={{
-        marginTop: "3rem",
-        borderTop: "1px solid #e5e7eb",
-        paddingTop: "2rem",
-      }}
-    >
-      <h2
-        style={{
-          fontSize: "1.5rem",
-          fontWeight: "700",
-          marginBottom: "1.5rem",
-        }}
-      >
-        Customer Reviews
-      </h2>
+    <section className={styles.section}>
+      <h2 className={styles.title}>Customer Reviews</h2>
 
       {/* SUMMARY HEADER */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "2rem",
-          padding: "1.5rem",
-          backgroundColor: "#f9fafb",
-          borderRadius: "12px",
-          marginBottom: "2rem",
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontSize: "3rem",
-              fontWeight: "800",
-              lineHeight: 1,
-              color: "#111827",
-            }}
-          >
-            {averageRating.toFixed(1)}
-          </div>
-          <div style={{ margin: "0.5rem 0" }}>
+      <div className={styles.summaryGrid}>
+        <div className={styles.scoreContainer}>
+          <div className={styles.scoreValue}>{averageRating.toFixed(1)}</div>
+          <div className={styles.starsWrapper}>
             <RatingStars
               rating={averageRating}
               showValue={false}
@@ -153,23 +119,14 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
               size={20}
             />
           </div>
-          <div style={{ color: "#6b7280", fontSize: "0.875rem" }}>
+          <div className={styles.countSubtitle}>
             Based on {displayCount} {displayCount === 1 ? "review" : "reviews"}
           </div>
 
           {authLoading ? null : isAuthenticated ? (
             <button
               onClick={() => setIsFormOpen((prev) => !prev)}
-              style={{
-                marginTop: "1.25rem",
-                padding: "0.625rem 1.25rem",
-                backgroundColor: "#2563eb",
-                color: "#fff",
-                fontWeight: "600",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-              }}
+              className={styles.actionButton}
             >
               {isFormOpen ? "Cancel" : "Write a Review"}
             </button>
@@ -177,16 +134,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
             <Link
               to="/login"
               state={{ from: { pathname: location.pathname } }}
-              style={{
-                display: "inline-block",
-                marginTop: "1.25rem",
-                padding: "0.625rem 1.25rem",
-                backgroundColor: "#2563eb",
-                color: "#fff",
-                fontWeight: "600",
-                textDecoration: "none",
-                borderRadius: "8px",
-              }}
+              className={styles.loginLink}
             >
               Log in to write a review
             </Link>
@@ -194,9 +142,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
         </div>
 
         {/* STAR DISTRIBUTION BARS */}
-        <div
-          style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
-        >
+        <div className={styles.distributionList}>
           {[5, 4, 3, 2, 1].map((star) => {
             const starCount =
               distribution[star as keyof typeof distribution] || 0;
@@ -204,46 +150,15 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
               reviews.length > 0 ? (starCount / reviews.length) * 100 : 0;
 
             return (
-              <div
-                key={star}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  fontSize: "0.875rem",
-                }}
-              >
-                <span style={{ width: "45px", color: "#374151" }}>
-                  {star} star
-                </span>
-                <div
-                  style={{
-                    flex: 1,
-                    height: "8px",
-                    backgroundColor: "#e5e7eb",
-                    borderRadius: "999px",
-                    overflow: "hidden",
-                  }}
-                >
+              <div key={star} className={styles.distributionRow}>
+                <span className={styles.starLabel}>{star} star</span>
+                <div className={styles.barTrack}>
                   <div
-                    style={{
-                      width: `${percentage}%`,
-                      height: "100%",
-                      backgroundColor: "#f59e0b",
-                      borderRadius: "999px",
-                      transition: "width 0.3s ease",
-                    }}
+                    className={styles.barFill}
+                    style={{ width: `${percentage}%` }}
                   />
                 </div>
-                <span
-                  style={{
-                    width: "35px",
-                    textAlign: "right",
-                    color: "#6b7280",
-                  }}
-                >
-                  {starCount}
-                </span>
+                <span className={styles.starCountLabel}>{starCount}</span>
               </div>
             );
           })}
@@ -252,47 +167,16 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
 
       {/* REVIEW FORM */}
       {isAuthenticated && isFormOpen && (
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            padding: "1.5rem",
-            border: "1px solid #e5e7eb",
-            borderRadius: "12px",
-            marginBottom: "2rem",
-            backgroundColor: "#fff",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "1.125rem",
-              fontWeight: "600",
-              marginBottom: "1rem",
-            }}
-          >
-            Write Your Review
-          </h3>
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <h3 className={styles.formTitle}>Write Your Review</h3>
 
           {submitError && (
-            <div
-              style={{
-                color: "#dc2626",
-                marginBottom: "1rem",
-                fontSize: "0.875rem",
-              }}
-            >
-              {submitError}
-            </div>
+            <div className={styles.errorMessage}>{submitError}</div>
           )}
 
-          <div style={{ marginBottom: "1rem" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "0.5rem",
-                fontWeight: "500",
-              }}
-            >
-              Your Rating <span style={{ color: "#dc2626" }}>*</span>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>
+              Your Rating <span className={styles.requiredAsterisk}>*</span>
             </label>
             <RatingStars
               rating={newRating}
@@ -304,44 +188,21 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
             />
           </div>
 
-          <div style={{ marginBottom: "1rem" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "0.5rem",
-                fontWeight: "500",
-              }}
-            >
-              Your Review
-            </label>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Your Review</label>
             <textarea
               rows={4}
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="What did you like or dislike about this product?"
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                borderRadius: "8px",
-                border: "1px solid #d1d5db",
-                outline: "none",
-                fontFamily: "inherit",
-              }}
+              className={styles.textarea}
             />
           </div>
 
           <button
             type="submit"
             disabled={submitting}
-            style={{
-              padding: "0.625rem 1.5rem",
-              backgroundColor: submitting ? "#9ca3af" : "#16a34a",
-              color: "#fff",
-              fontWeight: "600",
-              border: "none",
-              borderRadius: "8px",
-              cursor: submitting ? "not-allowed" : "pointer",
-            }}
+            className={styles.submitButton}
           >
             {submitting ? "Submitting..." : "Submit Review"}
           </button>
@@ -350,70 +211,42 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
 
       {/* REVIEWS LIST */}
       {loading ? (
-        <p style={{ color: "#6b7280" }}>Loading reviews...</p>
+        <p className={styles.statusText}>Loading reviews...</p>
       ) : error ? (
-        <p style={{ color: "#9ca3af", fontStyle: "italic" }}>{error}</p>
+        <p className={styles.statusErrorText}>{error}</p>
       ) : reviews.length === 0 ? (
-        <p style={{ color: "#6b7280", fontStyle: "italic" }}>
+        <p className={styles.statusEmptyText}>
           No reviews yet for this product. Be the first to write one!
         </p>
       ) : (
-        <div
-          style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}
-        >
+        <div className={styles.reviewsList}>
           {reviews.map((rev) => (
-            <div
-              key={rev.id}
-              style={{
-                borderBottom: "1px solid #f3f4f6",
-                paddingBottom: "1.5rem",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                <div
-                  style={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    backgroundColor: "#e0e7ff",
-                    color: "#3730a3",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: "700",
-                    fontSize: "0.875rem",
-                  }}
-                >
+            <div key={rev.id} className={styles.reviewCard}>
+              <div className={styles.reviewHeader}>
+                <div className={styles.avatar}>
                   {rev.userName ? rev.userName[0].toUpperCase() : "U"}
                 </div>
                 <div>
-                  <div style={{ fontWeight: "600", color: "#111827" }}>
+                  <div className={styles.authorName}>
                     {rev.userName || "Verified Buyer"}
                   </div>
-                  <div style={{ fontSize: "0.75rem", color: "#9ca3af" }}>
+                  <div className={styles.reviewDate}>
                     {rev.createdAt
                       ? new Date(rev.createdAt).toLocaleDateString()
                       : ""}
                   </div>
                 </div>
               </div>
+
               <RatingStars
                 rating={rev.rating}
                 showValue={false}
                 showCount={false}
                 size={14}
               />
+
               {rev.comment && (
-                <p style={{ marginTop: "0.5rem", color: "#374151" }}>
-                  {rev.comment}
-                </p>
+                <p className={styles.commentText}>{rev.comment}</p>
               )}
             </div>
           ))}

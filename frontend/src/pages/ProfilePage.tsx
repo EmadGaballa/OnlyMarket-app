@@ -1,9 +1,24 @@
+import { useState } from "react";
+import { useOrders, useCancelOrder } from "../hooks/useOrders";
+import ConfirmModal from "../components/ConfirmModal";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { authApi } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 import styles from "./ProfilePage.module.css";
 
 export default function ProfilePage() {
+  // Orders logic & state
+  const { data: orders, isLoading: ordersLoading } = useOrders();
+  const cancelOrder = useCancelOrder();
+  const [cancelingOrderId, setCancelingOrderId] = useState<number | null>(null);
+
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(price);
+
   const { user } = useAuth();
   const {
     data: profile,
@@ -64,6 +79,9 @@ export default function ProfilePage() {
             </h1>
             <p className={styles.emailText}>{profile?.email}</p>
           </div>
+          <Link to="/account/settings" className={styles.settingsLink}>
+            Account Settings
+          </Link>
         </div>
 
         <hr className={styles.divider} />
@@ -134,12 +152,65 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* Orders Section */}
+        <hr className={styles.divider} />
+        <div className={styles.ordersSection}>
+          <h2 className={styles.ordersTitle}>Your Orders</h2>
+          {ordersLoading ? (
+            <p className={styles.notSet}>Loading orders...</p>
+          ) : !orders || orders.length === 0 ? (
+            <p className={styles.notSet}>You haven't placed any orders yet.</p>
+          ) : (
+            <ul className={styles.ordersList}>
+              {orders.map((order) => (
+                <li key={order.id} className={styles.orderCard}>
+                  <div className={styles.orderCardHeader}>
+                    <span>Order #{order.id}</span>
+                    <span className={styles.statusBadge}>Preparing</span>
+                  </div>
+                  <p className={styles.value}>
+                    {order.items.length}{" "}
+                    {order.items.length === 1 ? "item" : "items"} —{" "}
+                    {formatPrice(order.total)}
+                  </p>
+                  <p className={styles.notSet}>
+                    Placed {new Date(order.createdAt).toLocaleDateString()}
+                  </p>
+                  <button
+                    type="button"
+                    className={styles.cancelOrderBtn}
+                    onClick={() => setCancelingOrderId(order.id)}
+                  >
+                    Cancel Order
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {cancelingOrderId !== null && (
+        <ConfirmModal
+          message="Are you sure you want to cancel this order? This action cannot be undone."
+          confirmLabel="Yes, Cancel Order"
+          cancelLabel="No, Keep Order"
+          loading={cancelOrder.isPending}
+          onConfirm={() =>
+            cancelOrder.mutate(cancelingOrderId, {
+              onSuccess: () => setCancelingOrderId(null),
+            })
+          }
+          onCancel={() => setCancelingOrderId(null)}
+        />
+      )}
     </div>
   );
 }
 
-/* Inline SVG Icons for Visual Consistency & Accessibility */
+/* Inline SVG Icons */
 function UserIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg

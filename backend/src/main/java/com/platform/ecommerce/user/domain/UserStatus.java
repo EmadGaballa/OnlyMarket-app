@@ -4,5 +4,7 @@ package com.platform.ecommerce.user.domain;
 public enum UserStatus {
   ACTIVE,
   SUSPENDED,
-  BANNED
+  BANNED,
+  /** Soft-deleted account; kept for order-history integrity. */
+  DELETED
 }

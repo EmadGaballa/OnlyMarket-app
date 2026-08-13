@@ -12,6 +12,9 @@ const CartPage = lazy(() => import("./pages/CartPage"));
 const WishlistPage = lazy(() => import("./pages/WishlistPage"));
 const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const AccountSettingsPage = lazy(() => import("./pages/AccountSettingsPage"));
+const CustomerSupportPage = lazy(() => import("./pages/CustomerSupport"));
 
 // Suspense Fallback UI
 function RouteLoadingFallback() {
@@ -65,6 +68,7 @@ export default function App() {
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
       <Routes>
+        {/* Auth Routes */}
         <Route
           path="/login"
           element={
@@ -77,9 +81,16 @@ export default function App() {
             isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />
           }
         />
+
+        {/* Layout Wrappers & Public/Protected Pages */}
         <Route path="/" element={<CustomerLayout />}>
           <Route index element={<ProductsPage />} />
           <Route path="products/:slug" element={<ProductDetailPage />} />
+
+          {/* 🆕 Public Support Page */}
+          <Route path="support" element={<CustomerSupportPage />} />
+
+          {/* Protected Customer Routes */}
           <Route
             path="cart"
             element={
@@ -112,7 +123,25 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="checkout"
+            element={
+              <ProtectedRoute>
+                <CheckoutPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="account/settings"
+            element={
+              <ProtectedRoute>
+                <AccountSettingsPage />
+              </ProtectedRoute>
+            }
+          />
         </Route>
+
+        {/* Catch-all Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>

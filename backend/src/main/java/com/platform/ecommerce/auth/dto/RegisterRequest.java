@@ -1,5 +1,6 @@
 package com.platform.ecommerce.auth.dto;
 
+import com.platform.ecommerce.common.validation.ValidPassword;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -30,7 +31,8 @@ public record RegisterRequest(
     @Size(max = 255)
     String email,
 
-    @Schema(description = "Password (minimum 8 characters)", example = "S3cure!Passw0rd")
+    @Schema(description = "Password (minimum 8 characters, one uppercase, one lowercase, one digit, one special character)", example = "S3cure!Passw0rd")
     @NotBlank(message = "Password is required")
-    @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
+    @ValidPassword
+    @Size(max = 100, message = "Password must be at most 100 characters")
     String password) {}

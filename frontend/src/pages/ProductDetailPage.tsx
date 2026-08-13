@@ -11,7 +11,7 @@ import {
 } from "../utils/product";
 import { ProductReviews } from "../components/ProductReviews";
 import AddToCartButton from "../components/AddToCartButton";
-import { useCart } from "../hooks/useCart";
+import { useCart, useRemoveCartItem } from "../hooks/useCart";
 import {
   useWishlist,
   useAddToWishlist,
@@ -38,10 +38,9 @@ export default function ProductDetailPage() {
     enabled: !!slug,
   });
 
-  // Resolve the target variant id (selected variant, else default/first)
+  // Resolve target variant ID
   const targetVariantId = selectedVariantId ?? resolveDefaultVariantId(product);
 
-  // Effective price / stock for the currently targeted variant
   const selectedVariant =
     product?.variants?.find((v) => v.id === targetVariantId) ??
     product?.variants?.[0];
@@ -53,11 +52,14 @@ export default function ProductDetailPage() {
   const stockQuantity = selectedVariant?.stockQuantity;
   const variantAttributesJson = selectedVariant?.attributesJson;
 
+  // Cart Hooks
   const { data: cart } = useCart();
+  const removeCartItem = useRemoveCartItem();
   const cartItem = cart?.items?.find(
     (item) => item.productVariantId === targetVariantId,
   );
 
+  // Wishlist Hooks
   const { data: wishlist } = useWishlist();
   const addToWishlist = useAddToWishlist();
   const removeFromWishlist = useRemoveFromWishlist();
@@ -72,7 +74,12 @@ export default function ProductDetailPage() {
     }
   };
 
-  // Reset states and update variant ID whenever the product changes
+  const handleRemoveFromCart = () => {
+    if (cartItem) {
+      removeCartItem.mutate(cartItem.id);
+    }
+  };
+
   useEffect(() => {
     setSelectedImageIndex(0);
     setQuantity(1);
@@ -145,7 +152,6 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          {/* Thumbnails */}
           {images.length > 1 && (
             <div className={styles.thumbnailGrid}>
               {images.map((img, idx) => (
@@ -169,7 +175,7 @@ export default function ProductDetailPage() {
           )}
         </div>
 
-        {/* Product Details & Purchase Section */}
+        {/* Info & Purchase Section */}
         <div className={styles.productDetailInfo}>
           <div className={styles.badges}>
             {product.brandName && (
@@ -224,17 +230,19 @@ export default function ProductDetailPage() {
           </div>
 
           <div className={styles.priceContainer}>
-            <span className={styles.price}>${unitPrice.toFixed(2)}</span>
-            {hasDiscount && (
-              <>
-                <span className={styles.oldPrice}>
-                  ${originalPrice.toFixed(2)}
-                </span>
-                <span className={styles.discountBadge}>
-                  {discountPercent}% OFF
-                </span>
-              </>
-            )}
+            <div className={styles.priceRow}>
+              <span className={styles.price}>${unitPrice.toFixed(2)}</span>
+              {hasDiscount && originalPrice > unitPrice && (
+                <>
+                  <span className={styles.oldPrice}>
+                    ${originalPrice.toFixed(2)}
+                  </span>
+                  <span className={styles.discountBadge}>
+                    {Math.round(discountPercent)}% OFF
+                  </span>
+                </>
+              )}
+            </div>
             {stockQuantity != null && stockQuantity <= 5 && (
               <span className={styles.stockNotice}>
                 {stockQuantity > 0
@@ -248,7 +256,7 @@ export default function ProductDetailPage() {
 
           <hr className={styles.divider} />
 
-          {/* Add to Cart Controls */}
+          {/* Cart Controls */}
           <div className={styles.actions}>
             {!cartItem && (
               <div className={styles.quantitySelector}>
@@ -293,6 +301,96 @@ export default function ProductDetailPage() {
               maxAvailableQuantity={stockQuantity}
               showStockHint
             />
+
+            {/* Quick Remove Button when Item is in Cart */}
+            {cartItem && (
+              <button
+                type="button"
+                onClick={handleRemoveFromCart}
+                title="Remove product from cart"
+                aria-label="Remove product from cart"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  padding: "0 14px",
+                  height: "44px",
+                  borderRadius: "8px",
+                  border: "1px solid #fecdd3",
+                  backgroundColor: "#fff1f2",
+                  color: "#e11d48",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  flexShrink: 0,
+                }}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 6h18" />
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+                <span>Remove</span>
+              </button>
+            )}
+          </div>
+
+          <hr className={styles.divider} />
+
+          {/* Shipping & Delivery Information Block */}
+          <div className={styles.shippingInfo}>
+            <div className={styles.shippingHeader}>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={styles.shippingIcon}
+              >
+                <rect x="1" y="3" width="15" height="13" />
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                <circle cx="5.5" cy="18.5" r="2.5" />
+                <circle cx="18.5" cy="18.5" r="2.5" />
+              </svg>
+              Shipping & Delivery Information
+            </div>
+
+            <div className={styles.shippingList}>
+              <div className={styles.shippingItem}>
+                <span className={styles.shippingEmoji}>🚚</span>
+                <span>
+                  <strong>Local Shipping:</strong> Estimated delivery times and
+                  fulfillment options are dynamically calculated at checkout
+                  based on your destination.
+                </span>
+              </div>
+
+              <div className={styles.shippingItem}>
+                <span className={styles.shippingEmoji}>✈️</span>
+                <span>
+                  <strong>International Express:</strong> Standard international
+                  delivery typically arrives within 5 to 7 business days. Fully
+                  tracked door-to-door.
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

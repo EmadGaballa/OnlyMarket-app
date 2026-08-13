@@ -66,7 +66,6 @@ export default function ProductsPage() {
   const categoryId = searchParams.get("categoryId") || "";
   const brandId = searchParams.get("brandId") || "";
   const sort = searchParams.get("sort") || "";
-  const expressOnly = searchParams.get("express") === "true";
   const page = Math.max(0, Number(searchParams.get("page") || "0"));
   const size = Number(searchParams.get("size") || "12");
 
@@ -86,23 +85,13 @@ export default function ProductsPage() {
     isLoading: productsLoading,
     isError: productsError,
   } = useQuery({
-    queryKey: [
-      "products",
-      search,
-      categoryId,
-      brandId,
-      sort,
-      expressOnly,
-      page,
-      size,
-    ],
+    queryKey: ["products", search, categoryId, brandId, sort, page, size],
     queryFn: () =>
       productsApi.list({
         search: search || undefined,
         categoryId: categoryId ? Number(categoryId) : undefined,
         brandId: brandId ? Number(brandId) : undefined,
         sort: sort || undefined,
-        express: expressOnly || undefined,
         page,
         size,
       }),
@@ -130,9 +119,7 @@ export default function ProductsPage() {
     setSearchParams(new URLSearchParams(), { replace: true });
   };
 
-  const hasActiveFilters = Boolean(
-    search || categoryId || brandId || expressOnly,
-  );
+  const hasActiveFilters = Boolean(search || categoryId || brandId);
 
   const totalElements = productsData?.totalElements ?? 0;
   const startItem = totalElements === 0 ? 0 : page * size + 1;
@@ -168,25 +155,6 @@ export default function ProductsPage() {
               </button>
             )}
           </div>
-
-          {/* Fulfillment Filter */}
-          <div className={styles.filterGroup}>
-            <label className={styles.expressToggle}>
-              <input
-                type="checkbox"
-                checked={expressOnly}
-                onChange={(e) =>
-                  updateParam("express", e.target.checked ? "true" : null)
-                }
-              />
-              <span className={styles.expressBadge}>
-                <span className={styles.expressText}>express</span>
-              </span>
-              <span className={styles.toggleLabel}>Next Day Delivery</span>
-            </label>
-          </div>
-
-          <hr className={styles.divider} />
 
           {/* Categories Facet */}
           <div className={styles.filterGroup}>
@@ -279,7 +247,7 @@ export default function ProductsPage() {
                 <option value="">Relevance & Featured</option>
                 <option value="price_asc">Price: Low to High</option>
                 <option value="price_desc">Price: High to Low</option>
-                <option value="rating_desc">Highest Rated</option>
+                <option value="averageRating,desc">Highest Rated</option>
                 <option value="newest">New Arrivals</option>
               </select>
             </div>
@@ -425,7 +393,7 @@ function ProductCard({ product }: { product: Product }) {
           </button>
         </div>
 
-        {/* Product Image - Optimized Lazy Loading & Async Decoding */}
+        {/* Product Image */}
         <div className={styles.imageWrapper}>
           <img
             src={mainImage}
@@ -445,7 +413,6 @@ function ProductCard({ product }: { product: Product }) {
           </h3>
 
           {/* Ratings Snippet */}
-
           <div className={styles.ratingRow}>
             <RatingStars
               rating={product.averageRating ?? 0}
@@ -472,14 +439,6 @@ function ProductCard({ product }: { product: Product }) {
                 })}
               </span>
             )}
-          </div>
-
-          {/* Express & Fulfillment Badges */}
-          <div className={styles.fulfillmentRow}>
-            <span className={styles.expressTag}>express</span>
-            <span className={styles.deliveryEstimate}>
-              Get it by <strong>Tomorrow</strong>
-            </span>
           </div>
         </div>
       </Link>

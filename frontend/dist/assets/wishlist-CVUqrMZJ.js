@@ -1,0 +1,1 @@
+import{e as s}from"./index-BmdqIKEO.js";const r={list:async()=>{const t=await s.get("/wishlist");return Array.isArray(t)?t:t&&typeof t=="object"&&"data"in t&&Array.isArray(t.data)?t.data:[]},addItem:t=>s.post(`/wishlist/items?productId=${t}`),removeItem:t=>s.delete(`/wishlist/items/${t}`)};export{r as w};
