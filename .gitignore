@@ -1,31 +1,97 @@
-### IntelliJ IDEA ###
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-.kotlin
+# =========================
+# Java / Maven
+# =========================
+target/
+*.class
+*.jar
+*.war
+*.ear
 
-### Eclipse ###
-.apt_generated
+# Maven wrapper generated files / local state
+.mvn/timing.properties
+
+# =========================
+# IntelliJ IDEA
+# =========================
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# =========================
+# Eclipse / STS
+# =========================
 .classpath
-.factorypath
 .project
-.settings
+.settings/
 .springBeans
 .sts4-cache
+.apt_generated
+.factorypath
 bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
 
-### NetBeans ###
+# =========================
+# NetBeans
+# =========================
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 /.nb-gradle/
 
-### VS Code ###
+# =========================
+# VS Code
+# =========================
 .vscode/
 
-### Mac OS ###
+# =========================
+# Node / React / Vite
+# =========================
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# =========================
+# Environment / Secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Logs
+# =========================
+*.log
+backend-log.txt
+full-backend-log.txt
+compile.log
+compile2.log
+
+# =========================
+# OS
+# =========================
 .DS_Store
+Thumbs.db
+
+# =========================
+# Aider
+# =========================
 .aider*
+.aider.tags.cache.v4/
+
+# =========================
+# Temporary / Patch / Backup files
+# =========================
+*.patch
+*.tmp
+*.bak
+backup-before-restore.patch
+uncommitted-changes.patch
+
+# =========================
+# Local scripts / imports
+# =========================
+import.ps1
+backend/import.ps1
+

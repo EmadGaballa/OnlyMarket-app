@@ -29,6 +29,8 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: 2s
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:true}
 
   cache:
     type: redis
@@ -37,7 +39,7 @@ spring:
       cache-null-values: false
 
 server:
-  port: 8080
+  port: ${PORT:8080}
   error:
     include-stacktrace: never
     include-message: never
