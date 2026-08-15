@@ -4,15 +4,14 @@ WORKDIR /app
 
 COPY pom.xml .
 
-RUN --mount=type=cache,target=/root/.m2,id=m2-cache \
-    mkdir -p src/main/java/com/example && \
+RUN mkdir -p src/main/java/com/example && \
     echo "package com.example; class Dummy { public static void main(String[] args) {} }" > src/main/java/com/example/Dummy.java && \
     mvn package -DskipTests -Dspring-boot.repackage.skip=true -B && \
     rm -rf src target
 
 COPY src ./src
 
-RUN --mount=type=cache,target=/root/.m2,id=m2-cache mvn package -DskipTests -B
+RUN mvn package -DskipTests -B
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
