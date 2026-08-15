@@ -653,7 +653,7 @@ function StoreIcon(props: IconProps) {
       height="24"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="black"
+      stroke="var(--color-text)"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
