@@ -56,7 +56,6 @@ public class LocalStorageService implements StorageService {
 
     try {
       Files.createDirectories(containerDir);
-      // FIX: Use normalizedType instead of raw contentType
       String extension = extensionFor(normalizedType);
       String filename = UUID.randomUUID() + extension;
       Path target = containerDir.resolve(filename);

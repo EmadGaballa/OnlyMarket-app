@@ -560,22 +560,3 @@
     padding: 24px 20px;
   }
 }
-
-/* Inside PasswordInput.module.css (or wherever PasswordInput is styled) */
-.passwordInput {
-  color: var(--color-text);
-  background-color: var(--color-surface-input);
-
-  /* Forces password bullets and text to render in white/light mode color */
-  -webkit-text-fill-color: var(--color-text);
-}
-
-/* Fixes browser autofill overriding the dark background & text color */
-.passwordInput:-webkit-autofill,
-.passwordInput:-webkit-autofill:hover,
-.passwordInput:-webkit-autofill:focus,
-.passwordInput:-webkit-autofill:active {
-  -webkit-text-fill-color: var(--color-text) !important;
-  -webkit-box-shadow: 0 0 0px 1000px var(--color-surface-input) inset !important;
-  transition: background-color 5000s ease-in-out 0s;
-}

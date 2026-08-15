@@ -38,7 +38,26 @@ button {
   font-family: inherit;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   font-family: inherit;
   font-size: inherit;
+  color: var(--color-text);
+  caret-color: var(--color-text);
+  /* WebKit quirk: password masks and textareas can receive a browser-injected
+     -webkit-text-fill-color that silently overrides `color`. Pin it to the
+     theme text color so form inputs stay readable in dark mode. */
+  -webkit-text-fill-color: var(--color-text);
+}
+
+/* Autofilled inputs get a browser-applied -webkit-text-fill-color and a
+   forced background flash. Reset the fill color and stall the background
+   transition so native autofill does not fight the theme. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--color-text) !important;
+  transition: background-color 9999s ease-in-out 0s;
 }

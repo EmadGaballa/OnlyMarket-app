@@ -813,7 +813,7 @@
   .mobilePanelRowActive {
     color: var(--accent-color);
     font-weight: 600;
-    background-color: rgba(37, 99, 235, 0.05);
+    background-color: color-mix(in srgb, var(--accent-color) 5%, transparent);
   }
 
   .mobilePanelShowMore {
@@ -895,7 +895,7 @@
   }
 
   .mobileLogoutBtn:hover {
-    background-color: rgba(239, 68, 68, 0.08);
+    background-color: color-mix(in srgb, var(--color-error) 8%, transparent);
   }
 
   .footerInner {
