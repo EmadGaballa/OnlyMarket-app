@@ -166,16 +166,6 @@ public class ProductImportService {
     int displayOrder = 0;
     for (String imageUrl : imageUrls) {
       String finalUrl = imageUrl;
-      try {
-        finalUrl = storageService.store(
-            "products/" + savedProduct.getId(),
-            imageUrl,
-            "image/jpeg",
-            fetchStream(imageUrl));
-      } catch (Exception e) {
-        // Fallback to direct URL if downloading/storing fails
-        finalUrl = imageUrl;
-      }
 
       ProductImage pi = new ProductImage();
       pi.setProduct(savedProduct);
