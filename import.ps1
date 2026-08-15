@@ -10,7 +10,7 @@ $headers = @{
 }
 
 try {
-    $loginResponse = Invoke-RestMethod -Uri "http://localhost:8080/api/v1/auth/login" -Method Post -Body $loginBody -Headers $headers
+    $loginResponse = Invoke-RestMethod -Uri "https://onlymarket-app-production.up.railway.app/api/v1/auth/login" -Method Post -Body $loginBody -Headers $headers
     $accessToken = $loginResponse.accessToken
     Write-Host "Login successful. Token obtained: $($accessToken.Substring(0, [Math]::Min(20, $accessToken.Length)))..."
 } catch {
@@ -28,7 +28,7 @@ $importHeaders = @{
 }
 
 try {
-    $importResponse = Invoke-RestMethod -Uri "http://localhost:8080/api/v1/admin/products/import" -Method Post -Headers $importHeaders
+    $importResponse = Invoke-RestMethod -Uri "https://onlymarket-app-production.up.railway.app/api/v1/admin/products/import" -Method Post -Headers $importHeaders
     Write-Host "Import response type: $($importResponse.GetType().Name)"
     Write-Host "Import response: $importResponse"
 
@@ -57,7 +57,7 @@ $jobStatus = ""
 while ($attempt -lt $maxAttempts) {
     Start-Sleep -Seconds 2
     try {
-        $jobStatusResponse = Invoke-RestMethod -Uri "http://localhost:8080/api/v1/admin/products/import/$jobId/status" -Method Get -Headers $importHeaders
+        $jobStatusResponse = Invoke-RestMethod -Uri "https://onlymarket-app-production.up.railway.app/api/v1/admin/products/import/$jobId/status" -Method Get -Headers $importHeaders
         Write-Host "Attempt $($attempt + 1): Full response = $jobStatusResponse"
 
         $parts = $jobStatusResponse -split '\|'
@@ -89,8 +89,3 @@ if ($jobStatus -ne "COMPLETED") {
     exit 1
 }
 
-# Step 4: Query database
-Write-Host "`nStep 4: Querying database..."
-docker compose exec postgres psql -U ecommerce -d ecommerce -c "SELECT COUNT(*) AS products FROM products; SELECT COUNT(*) AS variants FROM product_variants; SELECT COUNT(*) AS images FROM product_images;"
-
-Write-Host "`nVerification complete!"
